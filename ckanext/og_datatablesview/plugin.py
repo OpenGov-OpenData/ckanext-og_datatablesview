@@ -11,7 +11,7 @@ boolean_validator = toolkit.get_validator(u'boolean_validator')
 ignore_missing = toolkit.get_validator(u'ignore_missing')
 
 
-class DataTablesView(p.SingletonPlugin):
+class Og_DatatablesviewPlugin(p.SingletonPlugin):
     '''
     DataTables table view plugin
     '''
@@ -25,7 +25,7 @@ class DataTablesView(p.SingletonPlugin):
         template directory for the view
         '''
         toolkit.add_template_directory(config, u'templates')
-        toolkit.add_resource('public', 'ckanext-datatablesview')
+        toolkit.add_resource('public', 'ckanext-og_datatablesview')
 
     def can_view(self, data_dict):
         resource = data_dict['resource']
@@ -41,19 +41,19 @@ class DataTablesView(p.SingletonPlugin):
         if sort_column in show_fields:
             sort_index = show_fields.index(sort_column)
             data_dict['resource_view']['sort_index'] = sort_index
-        return u'datatables/datatables_view.html'
+        return u'og_datatables/datatables_view.html'
 
     def form_template(self, context, data_dict):
-        return u'datatables/datatables_form.html'
+        return u'og_datatables/datatables_form.html'
 
     def info(self):
         return {
-            u'name': u'datatables_view',
-            u'title': u'Data Table',
+            u'name': u'og_datatables_view',
+            u'title': u'OG Data Table',
             u'filterable': True,
             u'icon': u'table',
             u'requires_datastore': True,
-            u'default_title': p.toolkit._(u'Data Table'),
+            u'default_title': p.toolkit._(u'OG Data Table'),
             u'schema': {
                 u'responsive': [default(False), boolean_validator],
                 u'export_buttons': [default(False), boolean_validator],
@@ -68,13 +68,13 @@ class DataTablesView(p.SingletonPlugin):
 
     def before_map(self, m):
         m.connect(
-            u'/datatables/ajax/{resource_view_id}',
-            controller=u'ckanext.datatablesview.controller'
+            u'/og_datatables/ajax/{resource_view_id}',
+            controller=u'ckanext.og_datatablesview.controller'
                        u':DataTablesController',
-            action=u'ajax')
+            action=u'og_ajax')
         m.connect(
-            u'/datatables/filtered-download/{resource_view_id}',
-            controller=u'ckanext.datatablesview.controller'
+            u'/og_datatables/filtered-download/{resource_view_id}',
+            controller=u'ckanext.og_datatablesview.controller'
                        u':DataTablesController',
-            action=u'filtered_download')
+            action=u'og_filtered_download')
         return m

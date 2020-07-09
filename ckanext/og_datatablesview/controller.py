@@ -9,7 +9,7 @@ from ckan.common import json
 
 
 class DataTablesController(BaseController):
-    def ajax(self, resource_view_id):
+    def og_ajax(self, resource_view_id):
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})
 
@@ -56,6 +56,13 @@ class DataTablesController(BaseController):
             u"filters": filters,
         })
 
+        # Replace None value for numeric fields with empty string
+        records = response['records']
+        for record in records:
+            for (key, val), record_meta in zip(record.items(), response['fields']):
+                if record_meta['type'] == 'numeric' and val is None:
+                    record[key] = ''
+
         return json.dumps({
             u'draw': draw,
             u'iTotalRecords': unfiltered_response.get(u'total', 0),
@@ -66,7 +73,7 @@ class DataTablesController(BaseController):
             ],
         })
 
-    def filtered_download(self, resource_view_id):
+    def og_filtered_download(self, resource_view_id):
         params = json.loads(request.params['params'])
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})
