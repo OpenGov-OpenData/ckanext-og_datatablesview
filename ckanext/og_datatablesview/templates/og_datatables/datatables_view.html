@@ -44,7 +44,7 @@
           "extend": "colvis",
           "text": "{{ _('Hide/Unhide Columns') }}"
         }{{ ', "copy", "print"' | safe
-          if resource_view.get('export_buttons') else ''}}
+          if resource_view.get('copy_print_buttons') else ''}}
         ]'
       data-keys='true'>
     <thead>
