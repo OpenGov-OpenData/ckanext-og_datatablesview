@@ -1,84 +1,101 @@
 {% import 'macros/form.html' as form %}
 
 <div class="control-group">
-  <label class="control-label">Table Options</label>
+    <label class="control-label">Table Options</label>
     <div class="controls">
-      <label class="checkbox" for="field-responsive" title="Optimize table layout for smaller screen sizes">
-        <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive }}>
-        Enable responsive display
-      </label>
+        <label class="checkbox" for="field-responsive" title="Optimize table layout for smaller screen sizes">
+            <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive
+            }}>
+            Enable responsive display
+        </label>
     </div>
     <div class="controls">
-      <label class="checkbox" for="field-copy_print_buttons" title="Add Copy and Print buttons">
-        <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons }}>
-        Display Copy and Print buttons
-      </label>
+        <label class="checkbox" for="field-copy_print_buttons" title="Add Copy and Print buttons">
+            <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if
+            data.copy_print_buttons }}>
+            Display Copy and Print buttons
+        </label>
     </div>
     <div class="controls">
-      <label class="checkbox" for="field-col_reorder" title="Allow users to reorder columns through a drag and drag operation">
-        <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder }}>
-        Allow column reorder
-      </label>
+        <label class="checkbox" for="field-col_reorder"
+               title="Allow users to reorder columns through a drag and drag operation">
+            <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if
+            data.col_reorder }}>
+            Allow column reorder
+        </label>
     </div>
     <div class="controls">
-      <label class="checkbox" for="field-fixed_columns" title="Fix the _id column in place for use in x-axis scrolling">
-        <input id="field-fixed_columns" type="checkbox" name="fixed_columns" value="True" {{ "checked " if data.fixed_columns }}>
-        Fix _id column to left
-      </label>
+        <label class="checkbox" for="field-fixed_columns"
+               title="Fix the _id column in place for use in x-axis scrolling">
+            <input id="field-fixed_columns" type="checkbox" name="fixed_columns" value="True" {{ "checked " if
+            data.fixed_columns }}>
+            Fix _id column to left
+        </label>
     </div>
     <div class="controls">
-      <label class="checkbox" for="field-export_button" title="Display Export Button">
-        <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
-        Hide Export button
-      </label>
+        <label class="checkbox" for="field-export_button" title="Display Export Button">
+            <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if
+            data.export_button }}>
+            Hide Export button
+        </label>
+    </div>
+    <div class="controls">
+        <label class="checkbox" for="field-page_length" title="Enable long page length">
+            <input id="field-page_length" type="checkbox" name="long_page_length" value="True" {{ "checked " if
+            data.long_page_length }}>
+            Enable long page length
+        </label>
     </div>
 </div>
 
 <div class="control-group">
-  <label class="control-label">{{ _('Show Columns') }}</label>
-  <div class="controls">
-    <table class="table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th scope="col">{{ _('Column') }}</th>
-          <th scope="col">{{ _('Label') }}</th>
-        </tr>
-      </thead>
-      {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
-        <tr>
-          <td>
-            <label class="checkbox">
-            <input type="checkbox"
-            name="show_fields"
-            id="field-show_fields_{{ loop.index }}"
-            value="{{ f.id }}"
-            {{ 'checked' if 'show_fields' not in data else
-              'checked' if f.id in data.show_fields else '' }}
-            />{{ f.id }}</label></td>
-          <td>{{ f.get('info', {}).label }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  </div>
+    <label class="control-label">{{ _('Show Columns') }}</label>
+    <div class="controls">
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th scope="col">{{ _('Column') }}</th>
+                <th scope="col">{{ _('Label') }}</th>
+            </tr>
+            </thead>
+            {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
+            <tr>
+                <td>
+                    <label class="checkbox">
+                        <input type="checkbox"
+                               name="show_fields"
+                               id="field-show_fields_{{ loop.index }}"
+                               value="{{ f.id }}"
+                               {{ 'checked' if 'show_fields' not in data else
+                        'checked' if f.id in data.show_fields else '' }}
+                        />{{ f.id }}</label></td>
+                <td>{{ f.get('info', {}).label }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 
 <div class="control-group control-select">
-  <label class="control-label" for="field-sort_column">{{ _('Sort By') }}</label>
-  <div class="controls">
-    <select id="field-sort_column" name="sort_column">
-      {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
-        <option value="{{ f.id }}" {% if f.id|string == data.sort_column|string %} selected="selected" {% endif %}>{{ f.id }}</option>
-      {% endfor %}
-    </select>
-    <select id="field-sort_order" name="sort_order">
-      {% set order_list = ['asc','desc'] %}
-      {% for order in order_list %}
-        <option value="{{ order }}" {% if order == data.sort_order %} selected="selected" {% endif %}>{{ order }}</option>
-      {% endfor %}
-    </select>
-    <span class="info-block">
+    <label class="control-label" for="field-sort_column">{{ _('Sort By') }}</label>
+    <div class="controls">
+        <select id="field-sort_column" name="sort_column">
+            {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
+            <option value="{{ f.id }}" {% if f.id|string== data.sort_column|string %} selected="selected" {% endif %}>{{
+                f.id }}
+            </option>
+            {% endfor %}
+        </select>
+        <select id="field-sort_order" name="sort_order">
+            {% set order_list = ['asc','desc'] %}
+            {% for order in order_list %}
+            <option value="{{ order }}" {% if order== data.sort_order %} selected="selected" {% endif %}>{{ order }}
+            </option>
+            {% endfor %}
+        </select>
+        <span class="info-block">
       <i class="fa fa-info-circle"></i>
       Sorting will only apply if sort column is visible (i.e. selected in the Show Columns table)
     </span>
-  </div>
+    </div>
 </div>
