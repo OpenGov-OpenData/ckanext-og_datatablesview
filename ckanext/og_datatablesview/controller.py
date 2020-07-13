@@ -9,6 +9,15 @@ from ckan.common import json
 
 
 class DataTablesController(BaseController):
+
+    @staticmethod
+    def remove_None_values_from_numeric_fields(records, fields):
+        # Replace None value for numeric fields with empty string
+        for record in records:
+            for (key, val), record_meta in zip(record.items(), fields):
+                if record_meta['type'] == 'numeric' and val is None:
+                    record[key] = ''
+
     def og_ajax(self, resource_view_id):
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})
@@ -56,12 +65,7 @@ class DataTablesController(BaseController):
             u"filters": filters,
         })
 
-        # Replace None value for numeric fields with empty string
-        records = response['records']
-        for record in records:
-            for (key, val), record_meta in zip(record.items(), response['fields']):
-                if record_meta['type'] == 'numeric' and val is None:
-                    record[key] = ''
+        self.remove_None_values_from_numeric_fields(response['records'], response['fields'])
 
         return json.dumps({
             u'draw': draw,

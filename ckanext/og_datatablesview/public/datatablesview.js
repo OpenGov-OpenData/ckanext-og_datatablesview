@@ -13,10 +13,12 @@ this.ckan.module('datatables_view', function (jQuery) {
   return {
     initialize: function() {
       var datatable = jQuery('#dtprv').DataTable({});
-
-      // Adds download dropdown to buttons menu
-      datatable.button().add(2, {
-        text: 'Download',
+      var show_button = document.getElementById('dtprv').getAttribute('hide-export-button')
+      console.log(state)
+      if (show_button === 'true'){
+        // Adds download dropdown to buttons menu
+         datatable.button().add(2, {
+        text: 'Export',
         extend: 'collection',
         buttons: [{
           text: 'CSV',
@@ -48,6 +50,8 @@ this.ckan.module('datatables_view', function (jQuery) {
           }
         }]
       });
+      }
+
     }
   }
 });

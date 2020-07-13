@@ -63,6 +63,7 @@ class Og_DatatablesviewPlugin(p.SingletonPlugin):
                 u'sort_column': [ignore_missing],
                 u'sort_order': [ignore_missing],
                 u'filterable': [default(True), boolean_validator],
+                u'export_button': [default(False), boolean_validator],
             }
         }
 

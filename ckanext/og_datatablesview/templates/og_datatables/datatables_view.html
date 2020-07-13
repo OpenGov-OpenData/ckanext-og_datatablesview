@@ -46,7 +46,13 @@
         }{{ ', "copy", "print"' | safe
           if resource_view.get('copy_print_buttons') else ''}}
         ]'
-      data-keys='true'>
+      data-keys='true'
+      {% if resource_view.get('export_button') %}
+        hide-export-button="false"
+      {% else %}
+        hide-export-button="true"
+      {% endif %}
+>
     <thead>
       <tr>
         {% for field in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
@@ -60,6 +66,7 @@
     <tbody>
     </tbody>
   </table>
+
   <form id="filtered-datatables-download" method="POST" action="{{ h.url_for(
       controller='ckanext.og_datatablesview.controller:DataTablesController',
       action='og_filtered_download',
