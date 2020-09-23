@@ -14,7 +14,6 @@ this.ckan.module('datatables_view', function (jQuery) {
     initialize: function() {
       var datatable = jQuery('#dtprv').DataTable({});
       var show_button = document.getElementById('dtprv').getAttribute('hide-export-button')
-      console.log(state)
       if (show_button === 'true'){
         // Adds download dropdown to buttons menu
          datatable.button().add(2, {
