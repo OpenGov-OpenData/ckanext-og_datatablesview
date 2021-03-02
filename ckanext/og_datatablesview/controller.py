@@ -11,16 +11,22 @@ from ckan.common import json
 class DataTablesController(BaseController):
 
     @staticmethod
-    def remove_None_values_from_numeric_fields(records, fields):
+    def remove_None_values_from_numeric_fields(resource_view_id, records, fields):
         # Replace None value for numeric fields with empty string
+        datastore_info = get_action(u'datastore_info')
+        unfiltered_datastore_info_response = datastore_info(None, {u"id": resource_view_id})
+        resource_datastore_schema = unfiltered_datastore_info_response['schema']
+
         for record in records:
             for (key, val), record_meta in zip(record.items(), fields):
-                if record_meta['type'] == 'numeric' and val is None:
+                if key != u'_id' and resource_datastore_schema[key] == 'number' and val is None:
                     record[key] = ''
 
     def og_ajax(self, resource_view_id):
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})
+
+        resource_id = resource_view[u'resource_id']
 
         draw = int(request.params['draw'])
         search_text = unicode(request.params['search[value]'])
@@ -32,7 +38,7 @@ class DataTablesController(BaseController):
 
         datastore_search = get_action(u'datastore_search')
         unfiltered_response = datastore_search(None, {
-            u"resource_id": resource_view[u'resource_id'],
+            u"resource_id": resource_id,
             u"limit": 0,
             u"filters": view_filters,
         })
@@ -65,7 +71,9 @@ class DataTablesController(BaseController):
             u"filters": filters,
         })
 
-        self.remove_None_values_from_numeric_fields(response['records'], response['fields'])
+        self.remove_None_values_from_numeric_fields(resource_id, response['records'], response['fields'])
+
+        # print(response['records'])
 
         return json.dumps({
             u'draw': draw,
