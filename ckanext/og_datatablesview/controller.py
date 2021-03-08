@@ -18,8 +18,8 @@ class DataTablesController(BaseController):
         resource_datastore_schema = unfiltered_datastore_info_response['schema']
 
         for record in records:
-            for (key, val), record_meta in zip(record.items(), fields):
-                if key != u'_id' and resource_datastore_schema[key] == 'number' and val is None:
+            for key in record.keys():
+                if key != u'_id' and resource_datastore_schema[key] == 'number' and record[key] is None:
                     record[key] = ''
 
     def og_ajax(self, resource_view_id):
@@ -72,8 +72,6 @@ class DataTablesController(BaseController):
         })
 
         self.remove_None_values_from_numeric_fields(resource_id, response['records'], response['fields'])
-
-        # print(response['records'])
 
         return json.dumps({
             u'draw': draw,
