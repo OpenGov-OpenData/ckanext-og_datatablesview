@@ -1,44 +1,36 @@
 # encoding: utf-8
 
-from urllib import urlencode
-
+from six.moves.urllib.parse import urlencode
 from six import text_type
 
-from ckan.plugins.toolkit import BaseController, get_action, request, h
 from ckan.common import json
+from ckan.plugins.toolkit import BaseController, get_action, request, h
 
 
 class DataTablesController(BaseController):
 
     @staticmethod
-    def remove_None_values_from_numeric_fields(resource_view_id, records, fields):
-        # Replace None value for numeric fields with empty string
-        datastore_info = get_action(u'datastore_info')
-        unfiltered_datastore_info_response = datastore_info(None, {u"id": resource_view_id})
-        resource_datastore_schema = unfiltered_datastore_info_response['schema']
-
+    def remove_null_values(records):
         for record in records:
             for key in record.keys():
-                if key != u'_id' and resource_datastore_schema[key] == 'number' and record[key] is None:
+                if key != u'_id' and record[key] is None:
                     record[key] = ''
 
-    def og_ajax(self, resource_view_id):
+    def ajax(self, resource_view_id):
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})
 
-        resource_id = resource_view[u'resource_id']
-
         draw = int(request.params['draw'])
-        search_text = unicode(request.params['search[value]'])
+        search_text = text_type(request.params['search[value]'])
         offset = int(request.params['start'])
         limit = int(request.params['length'])
         view_filters = resource_view.get(u'filters', {})
-        user_filters = unicode(request.params['filters'])
+        user_filters = text_type(request.params['filters'])
         filters = merge_filters(view_filters, user_filters)
 
         datastore_search = get_action(u'datastore_search')
         unfiltered_response = datastore_search(None, {
-            u"resource_id": resource_id,
+            u"resource_id": resource_view[u'resource_id'],
             u"limit": 0,
             u"filters": view_filters,
         })
@@ -71,19 +63,19 @@ class DataTablesController(BaseController):
             u"filters": filters,
         })
 
-        self.remove_None_values_from_numeric_fields(resource_id, response['records'], response['fields'])
+        self.remove_null_values(response['records'])
 
         return json.dumps({
             u'draw': draw,
             u'iTotalRecords': unfiltered_response.get(u'total', 0),
             u'iTotalDisplayRecords': response.get(u'total', 0),
             u'aaData': [
-                [unicode(row.get(colname, u'')) for colname in cols]
+                [text_type(row.get(colname, u'')) for colname in cols]
                 for row in response['records']
             ],
         })
 
-    def og_filtered_download(self, resource_view_id):
+    def filtered_download(self, resource_view_id):
         params = json.loads(request.params['params'])
         resource_view = get_action(u'resource_view_show')(
             None, {u'id': resource_view_id})

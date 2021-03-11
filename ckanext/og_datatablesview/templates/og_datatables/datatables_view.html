@@ -5,12 +5,13 @@
       class="table table-striped table-bordered"
       data-module="datatables_view"
       data-paging="true"
+      data-length-menu="{{page_length_choices}}"
       data-server-side="true"
       data-processing="true"
       data-ajax='{
           "url": "{{ h.url_for(
             controller='ckanext.og_datatablesview.controller:DataTablesController',
-            action='og_ajax',
+            action='ajax',
             resource_view_id=resource_view.id) }}",
           "type": "POST",
           "data": { "filters": "{{ request.params.get('filters', '')|e }}" }
@@ -27,11 +28,6 @@
       {% else %}
         data-col-reorder="false"
       {% endif %}
-      {% if resource_view.get('fixed_columns') %}
-        data-fixed-columns="true"
-      {% else %}
-        data-fixed-columns="false"
-      {% endif %}
       {% set sort_index = resource_view.get('sort_index') %}
       {% set sort_order = resource_view.get('sort_order') %}
       {% if sort_index >= 0 and sort_order %}
@@ -46,17 +42,12 @@
         }{{ ', "copy", "print"' | safe
           if resource_view.get('copy_print_buttons') else ''}}
         ]'
-      data-keys='true'
       {% if resource_view.get('export_button') %}
-        hide-export-button="false"
+        display-export-button="true"
       {% else %}
-        hide-export-button="true"
+        display-export-button="false"
       {% endif %}
-      {% if resource_view.get('long_page_length') %}
-        data-length-menu="[ 10, 50, 100, 500]"
-        data-scroll-y="1000px"
-        data-scroll-collapse="true"
-      {% endif %}
+      data-keys='true'
     >
     <thead>
       <tr>
@@ -74,15 +65,15 @@
 
   <form id="filtered-datatables-download" method="POST" action="{{ h.url_for(
       controller='ckanext.og_datatablesview.controller:DataTablesController',
-      action='og_filtered_download',
+      action='filtered_download',
       resource_view_id=resource_view.id) }}">
     <input type="hidden" name="filters" value="{{ request.params.get('filters', '')|e }}" />
   </form>
-
-  {% resource 'ckanext-og_datatablesview/main' %}
 {% endblock %}
 
-{% block styles %}{% endblock %}
+{% block styles %}
+  {% resource 'ckanext-og_datatablesview/main' %}
+{% endblock %}
 {% block custom_styles %}
 <style>
   @media (min-width: 767px) {

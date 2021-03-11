@@ -80,7 +80,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points='''
         [ckan.plugins]
-        og_datatablesview=ckanext.og_datatablesview.plugin:Og_DatatablesviewPlugin
+        og_datatables_view=ckanext.og_datatablesview.plugin:OG_DataTablesView
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
