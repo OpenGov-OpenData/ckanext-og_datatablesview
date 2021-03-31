@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% set snippet_type = 'asset' if h.ckan_version() > '2.9' else 'resource'  %}
+
 {% block page %}
   <table id="dtprv"
       class="table table-striped table-bordered"

@@ -1,10 +1,14 @@
 # encoding: utf-8
-
-from logging import getLogger
-
-from ckan.common import json
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
+from ckan.exceptions import CkanVersionException
+
+try:
+    toolkit.requires_ckan_version("2.9")
+except CkanVersionException:
+    from ckanext.og_datatablesview.plugin.pylons_plugin import MixinPlugin
+else:
+    from ckanext.og_datatablesview.plugin.flask_plugin import MixinPlugin
 
 default = toolkit.get_validator(u'default')
 boolean_validator = toolkit.get_validator(u'boolean_validator')
@@ -14,13 +18,12 @@ ignore_missing = toolkit.get_validator(u'ignore_missing')
 DEFAULT_PAGE_LENGTH_CHOICES = '10 25 50 100'
 
 
-class OG_DataTablesView(p.SingletonPlugin):
+class OG_DataTablesView(MixinPlugin):
     '''
     DataTables table view plugin
     '''
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
-    p.implements(p.IRoutes, inherit=True)
 
     def update_config(self, config):
         '''
@@ -32,8 +35,8 @@ class OG_DataTablesView(p.SingletonPlugin):
                        DEFAULT_PAGE_LENGTH_CHOICES))
         self.page_length_choices = [int(i) for i in self.page_length_choices]
 
-        toolkit.add_template_directory(config, u'templates')
-        toolkit.add_resource('public', u'ckanext-og_datatablesview')
+        toolkit.add_template_directory(config, u'../templates')
+        toolkit.add_resource('../public', u'ckanext-og_datatablesview')
 
     def can_view(self, data_dict):
         resource = data_dict['resource']
@@ -74,16 +77,3 @@ class OG_DataTablesView(p.SingletonPlugin):
                 u'filterable': [default(True), boolean_validator]
             }
         }
-
-    def before_map(self, m):
-        m.connect(
-            u'/og_datatables/ajax/{resource_view_id}',
-            controller=u'ckanext.og_datatablesview.controller'
-                       u':DataTablesController',
-            action=u'ajax')
-        m.connect(
-            u'/og_datatables/filtered-download/{resource_view_id}',
-            controller=u'ckanext.og_datatablesview.controller'
-                       u':DataTablesController',
-            action=u'filtered_download')
-        return m
