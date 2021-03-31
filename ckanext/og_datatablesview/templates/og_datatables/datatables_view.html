@@ -2,6 +2,14 @@
 
 {% set snippet_type = 'asset' if h.ckan_version() > '2.9' else 'resource'  %}
 
+{% if h.ckan_version() < '2.9' %}
+    {% set ajax_url = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='ajax', resource_view_id=resource_view.id) %}
+    {% set filtered_download_action = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='filtered_download', resource_view_id=resource_view.id) %}
+{% else %}
+    {% set ajax_url =  h.url_for('/datatables/ajax/resource_view.idresource_view.id') %}
+    {% set filtered_download_action = h.url_for('/datatables/filtered-download/resource_view.id') %}
+{% endif %}
+
 {% block page %}
   <table id="dtprv"
       class="table table-striped table-bordered"
@@ -11,10 +19,7 @@
       data-server-side="true"
       data-processing="true"
       data-ajax='{
-          "url": "{{ h.url_for(
-            controller='ckanext.og_datatablesview.controller:DataTablesController',
-            action='ajax',
-            resource_view_id=resource_view.id) }}",
+          "url":"{{ ajax_url }}",
           "type": "POST",
           "data": { "filters": "{{ request.params.get('filters', '')|e }}" }
         }'
@@ -65,10 +70,7 @@
     </tbody>
   </table>
 
-  <form id="filtered-datatables-download" method="POST" action="{{ h.url_for(
-      controller='ckanext.og_datatablesview.controller:DataTablesController',
-      action='filtered_download',
-      resource_view_id=resource_view.id) }}">
+  <form id="filtered-datatables-download" method="POST" action="{{ filtered_download_action }}">
     <input type="hidden" name="filters" value="{{ request.params.get('filters', '')|e }}" />
   </form>
 {% endblock %}
