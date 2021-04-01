@@ -63,7 +63,7 @@ To install ckanext-og_datatablesview:
 
      pip install ckanext-og_datatablesview
 
-3. Add ``og_datatablesview`` to the ``ckan.plugins`` setting in your CKAN
+3. Add ``og_datatables_view`` to the ``ckan.plugins`` setting in your CKAN
    config file (by default the config file is located at
    ``/etc/ckan/default/production.ini``).
 
