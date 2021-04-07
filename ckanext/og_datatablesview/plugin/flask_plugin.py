@@ -2,7 +2,7 @@
 from flask import Blueprint
 
 import ckan.plugins as p
-from ckanext.og_datatablesview.controller import DataTablesController
+import ckanext.og_datatablesview.utils as utils
 
 
 class MixinPlugin(p.SingletonPlugin):
@@ -13,12 +13,12 @@ class MixinPlugin(p.SingletonPlugin):
         return api
 
 
-def ajax():
-    return DataTablesController().ajax()
+def ajax(resource_view_id):
+    return utils.ajax(resource_view_id)
 
 
-def filtered_download():
-    return DataTablesController().filtered_download()
+def filtered_download(resource_view_id):
+    return utils.filtered_download(resource_view_id)
 
 
 api = Blueprint('datatablesview', __name__)
