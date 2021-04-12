@@ -36,7 +36,8 @@ class OG_DataTablesView(MixinPlugin):
         self.page_length_choices = [int(i) for i in self.page_length_choices]
 
         toolkit.add_template_directory(config, u'../templates')
-        toolkit.add_resource('../public', u'ckanext-og_datatablesview')
+        toolkit.add_public_directory(config, '../assets')
+        toolkit.add_resource('../assets', u'ckanext-og_datatablesview')
 
     def can_view(self, data_dict):
         resource = data_dict['resource']
