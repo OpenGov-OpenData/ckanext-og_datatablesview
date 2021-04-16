@@ -24,7 +24,7 @@ setup(
     url='https://github.com/DenysVasilovOpenGov/ckanext-og_datatablesview',
 
     # Author details
-    author='''dvasilov''',
+    author='''dvasilov''', '''javier-tello'''
     author_email='''''',
 
     # Choose your license
@@ -44,7 +44,7 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.6',
     ],
 
 
