@@ -4,10 +4,10 @@ from six.moves.urllib.parse import urlencode
 from six import text_type
 
 from ckan.common import json
-from ckan.plugins.toolkit import get_action, request, h
+from ckan.exceptions import CkanVersionException
+from ckan.plugins.toolkit import get_action, request, h, requires_ckan_version
 
 
-@staticmethod
 def remove_null_values(records):
     for record in records:
         for key in record.keys():
@@ -41,21 +41,33 @@ def merge_filters(view_filters, user_filters_str):
         filters[k] = user_filters[k]
     return filters
 
+def use_compatible_ckan_version_request_object():
+    try:
+        requires_ckan_version("2.9")
+    except CkanVersionException:
+        print('request.params')
+        return request.params
+    else:
+        print('request.form')
+        return request.form
+
+
 ###############################################################################
 #                                  Controller                                 #
 ###############################################################################
 
 
-def ajax(self, resource_view_id):
+def ajax(resource_view_id):
+    get_request = use_compatible_ckan_version_request_object()
     resource_view = get_action(u'resource_view_show')(
         None, {u'id': resource_view_id})
 
-    draw = int(request.params['draw'])
-    search_text = text_type(request.params['search[value]'])
-    offset = int(request.params['start'])
-    limit = int(request.params['length'])
+    draw = int(get_request['draw'])
+    search_text = text_type(get_request['search[value]'])
+    offset = int(get_request['start'])
+    limit = int(get_request['length'])
     view_filters = resource_view.get(u'filters', {})
-    user_filters = text_type(request.params['filters'])
+    user_filters = text_type(get_request['filters'])
     filters = merge_filters(view_filters, user_filters)
 
     datastore_search = get_action(u'datastore_search')
@@ -72,11 +84,11 @@ def ajax(self, resource_view_id):
     sort_list = []
     i = 0
     while True:
-        if u'order[%d][column]' % i not in request.params:
+        if u'order[%d][column]' % i not in get_request:
             break
-        sort_by_num = int(request.params[u'order[%d][column]' % i])
+        sort_by_num = int(get_request[u'order[%d][column]' % i])
         sort_order = (
-            u'desc' if request.params[u'order[%d][dir]' % i] == u'desc'
+            u'desc' if get_request[u'order[%d][dir]' % i] == u'desc'
             else u'asc')
         sort_list.append(cols[sort_by_num] + u' ' + sort_order)
         i += 1
@@ -93,7 +105,7 @@ def ajax(self, resource_view_id):
         u"filters": filters,
     })
 
-    self.remove_null_values(response['records'])
+    remove_null_values(response['records'])
 
     return json.dumps({
         u'draw': draw,
@@ -106,8 +118,9 @@ def ajax(self, resource_view_id):
     })
 
 
-def filtered_download(self, resource_view_id):
-    params = json.loads(request.params['params'])
+def filtered_download(resource_view_id):
+    get_request = use_compatible_ckan_version_request_object()
+    params = json.loads(get_request['params'])
     resource_view = get_action(u'resource_view_show')(
         None, {u'id': resource_view_id})
 
@@ -137,28 +150,22 @@ def filtered_download(self, resource_view_id):
 
     cols = [c for (c, v) in zip(cols, params['visible']) if v and c != '_id']
 
-    if h.ckan_version() > '2.9':
-        h.redirect_to(
-            h.
-            url_for(u'datastore.dump', resource_id=resource_view[u'resource_id']) +
-            u'?' + urlencode({
+    urlencode_dict = {
                 u'q': search_text,
                 u'sort': u','.join(sort_list),
                 u'filters': json.dumps(filters),
-                u'format': request.form[u'format'],
+                u'format': get_request[u'format'],
                 u'fields': u','.join(cols),
-            })
-        )
+            }
+
+    if h.ckan_version() > '2.9':
+        return h.redirect_to(
+            h.url_for(u'datastore.dump', resource_id=resource_view[u'resource_id']) +
+            u'?' + urlencode(urlencode_dict))
     else:
-        h.redirect_to(
+        return h.redirect_to(
             h.url_for(
                 controller=u'ckanext.datastore.controller:DatastoreController',
                 action=u'dump',
                 resource_id=resource_view[u'resource_id'])
-            + u'?' + urlencode({
-                u'q': search_text,
-                u'sort': u','.join(sort_list),
-                u'filters': json.dumps(filters),
-                u'format': request.params['format'],
-                u'fields': u','.join(cols),
-            }))
+            + u'?' + urlencode(urlencode_dict))

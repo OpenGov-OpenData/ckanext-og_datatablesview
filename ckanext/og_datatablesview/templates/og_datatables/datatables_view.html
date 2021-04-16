@@ -1,17 +1,15 @@
 {% extends "base.html" %}
 
-{% set snippet_type = 'asset' if h.ckan_version() > '2.9' else 'resource'  %}
-
-{% if h.ckan_version() > '2.9' %}
+{% if h.ckan_version() >= '2.9' %}
     {% set ajax_url = h.url_for('datatablesview.ajax', resource_view_id=resource_view.id)  %}
-    {% set ajax_data = { "filters": "{{ request.args.get('filters', '')|e }}" } %}
-    {% set filtered_download_action = h.url_for('/datatables/filtered-download/resource_view.id') %}
-    {% set filtered_download_data = "{{ request.args.get('filters', '')|e }}" %}
+    {% set ajax_data = request.args.get('filters', '')|e %}
+    {% set filtered_download_action = h.url_for('datatablesview.filtered_download', resource_view_id=resource_view.id) %}
+    {% set filtered_download_data = request.args.get('filters', '')|e %}
 {% else %}
     {% set ajax_url = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='ajax', resource_view_id=resource_view.id) %}
-    {% set ajax_data = { "filters": "{{ request.params.get('filters', '')|e }}" } %}
-    {% set filtered_download_action = h.url_for('datatablesview.filtered_download', resource_view_id=resource_view.id) %}
-    {% set filtered_download_data = "{{ request.params.get('filters', '')|e }}" %}
+    {% set ajax_data = request.params.get('filters', '')|e %}
+    {% set filtered_download_action = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='filtered_download', resource_view_id=resource_view.id) %}
+    {% set filtered_download_data = request.params.get('filters', '')|e %}
 {% endif %}
 
 {% block page %}
@@ -25,7 +23,7 @@
       data-ajax='{
           "url":"{{ ajax_url }}",
           "type": "POST",
-          "data": {{ ajax_data }}
+          "data": { "filters": "{{ ajax_data }}" }
         }'
       {% if resource_view.get('responsive') %}
         data-responsive="true"
@@ -80,12 +78,11 @@
 {% endblock %}
 
 {% block styles %}
-    {% if h.ckan_version() > '2.9' %}
-
-    {% else %}
-         {% resource 'ckanext-og_datatablesview/main' %}
-    {% endif %}
+    {{ super() }}
+    {% set _type = 'asset' if h.ckan_version() > '2.9' else 'resource'  %}
+    {% snippet 'snippets/datatables_' ~ _type ~ '.html' %}
 {% endblock %}
+
 {% block custom_styles %}
 <style>
   @media (min-width: 767px) {

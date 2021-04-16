@@ -25,6 +25,7 @@ class OG_DataTablesView(MixinPlugin):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
 
+    # IConfigurer
     def update_config(self, config):
         '''
         Load config and set up the resource library,
@@ -36,9 +37,10 @@ class OG_DataTablesView(MixinPlugin):
         self.page_length_choices = [int(i) for i in self.page_length_choices]
 
         toolkit.add_template_directory(config, u'../templates')
-        toolkit.add_public_directory(config, '../assets')
+        toolkit.add_public_directory(config, u'../assets')
         toolkit.add_resource('../assets', u'ckanext-og_datatablesview')
 
+    # IResourceView
     def can_view(self, data_dict):
         resource = data_dict['resource']
         return resource.get(u'datastore_active')

@@ -10,7 +10,7 @@ class MixinPlugin(p.SingletonPlugin):
 
     # IBlueprint
     def get_blueprint(self):
-        return api
+        return datatablesview
 
 
 def ajax(resource_view_id):
@@ -21,6 +21,6 @@ def filtered_download(resource_view_id):
     return utils.filtered_download(resource_view_id)
 
 
-api = Blueprint('datatablesview', __name__)
-api.add_url_rule('/datatables/ajax/<resource_view_id>', view_func=ajax, methods=[u'POST'])
-api.add_url_rule('/datatables/filtered-download/<resource_view_id>', view_func=filtered_download, methods=[u'POST'])
+datatablesview = Blueprint(u'datatablesview', __name__)
+datatablesview.add_url_rule(u'/datatables/ajax/<resource_view_id>', view_func=ajax, methods=[u'POST'])
+datatablesview.add_url_rule(u'/datatables/filtered-download/<resource_view_id>', view_func=filtered_download, methods=[u'POST'])
