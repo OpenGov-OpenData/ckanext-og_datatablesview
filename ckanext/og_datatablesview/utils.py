@@ -41,6 +41,7 @@ def merge_filters(view_filters, user_filters_str):
         filters[k] = user_filters[k]
     return filters
 
+
 def use_compatible_ckan_version_request_object():
     try:
         requires_ckan_version("2.9")
