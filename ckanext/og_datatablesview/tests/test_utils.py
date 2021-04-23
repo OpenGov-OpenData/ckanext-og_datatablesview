@@ -1,8 +1,9 @@
-from ckanext.og_datatablesview.controller import DataTablesController
-from nose.tools import assert_false
+import pytest
+
+import ckanext.og_datatablesview.utils as utils
 
 
-class TestController:
+class TestUtils:
 
     def test_clean_None_values(self):
         records = [
@@ -22,17 +23,7 @@ class TestController:
              u'_id': 7}
         ]
 
-        fields = [
-            {u'type': 'int', u'id': '_id'},
-            {u'info': {u'notes': u'', u'type_override': u'', u'label': u''}, u'type': u'text', u'id': u'name'},
-            {u'info': {u'notes': u'', u'type_override': u'', u'label': u''}, u'type': u'text', u'id': u'surname'},
-            {u'info': {u'notes': u'', u'type_override': u'', u'label': u''}, u'type': u'text', u'id': u'emotion'},
-            {u'info': {u'notes': u'', u'type_override': u'numeric', u'label': u''}, u'type': u'numeric',
-             u'id': u'age'},
-            {u'info': {u'notes': u'', u'type_override': u'', u'label': u''}, u'type': u'text', u'id': u'level'}
-        ]
-
-        DataTablesController.remove_None_values_from_numeric_fields(records, fields)
+        utils.remove_null_values(records)
 
         numeric_values = [r['age'] for r in records]
-        assert_false(None in numeric_values)
+        assert(None not in numeric_values)

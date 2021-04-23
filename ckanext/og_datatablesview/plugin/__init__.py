@@ -9,6 +9,7 @@ except CkanVersionException:
     from ckanext.og_datatablesview.plugin.pylons_plugin import MixinPlugin
 else:
     from ckanext.og_datatablesview.plugin.flask_plugin import MixinPlugin
+from ckanext.og_datatablesview.helpers import version_builder
 
 default = toolkit.get_validator(u'default')
 boolean_validator = toolkit.get_validator(u'boolean_validator')
@@ -24,6 +25,7 @@ class OG_DataTablesView(MixinPlugin):
     '''
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
+    p.implements(p.ITemplateHelpers)
 
     # IConfigurer
     def update_config(self, config):
@@ -79,4 +81,10 @@ class OG_DataTablesView(MixinPlugin):
                 u'sort_order': [ignore_missing],
                 u'filterable': [default(True), boolean_validator]
             }
+        }
+
+    # ITemplateHelpers
+    def get_helpers(self):
+        return {
+            'version': version_builder,
         }

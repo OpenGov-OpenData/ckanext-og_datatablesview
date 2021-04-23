@@ -15,6 +15,15 @@ def remove_null_values(records):
                 record[key] = ''
 
 
+def use_compatible_ckan_version_request_object():
+    try:
+        requires_ckan_version("2.9")
+    except CkanVersionException:
+        return request.params
+    else:
+        return request.form
+
+
 def merge_filters(view_filters, user_filters_str):
     u'''
     view filters are built as part of the view, user filters
@@ -40,17 +49,6 @@ def merge_filters(view_filters, user_filters_str):
     for k in user_filters:
         filters[k] = user_filters[k]
     return filters
-
-
-def use_compatible_ckan_version_request_object():
-    try:
-        requires_ckan_version("2.9")
-    except CkanVersionException:
-        print('request.params')
-        return request.params
-    else:
-        print('request.form')
-        return request.form
 
 
 ###############################################################################

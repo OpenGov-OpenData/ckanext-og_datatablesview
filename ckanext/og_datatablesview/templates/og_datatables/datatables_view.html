@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% if h.ckan_version() >= '2.9' %}
+{% set ckan_29_or_higher = h.version(h.ckan_version()) > h.version('2.9') %}
+
+{% if ckan_29_or_higher %}
     {% set ajax_url = h.url_for('datatablesview.ajax', resource_view_id=resource_view.id)  %}
     {% set ajax_data = request.args.get('filters', '')|e %}
     {% set filtered_download_action = h.url_for('datatablesview.filtered_download', resource_view_id=resource_view.id) %}
@@ -78,7 +80,7 @@
 {% endblock %}
 
 {% block styles %}
-    {% set _type = 'asset' if h.ckan_version() > '2.9' else 'resource'  %}
+    {% set _type = 'asset' if ckan_29_or_higher else 'resource'  %}
     {% snippet 'snippets/datatables_' ~ _type ~ '.html' %}
 {% endblock %}
 

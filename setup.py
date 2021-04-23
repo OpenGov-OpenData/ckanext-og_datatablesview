@@ -24,7 +24,7 @@ setup(
     url='https://github.com/DenysVasilovOpenGov/ckanext-og_datatablesview',
 
     # Author details
-    author='''dvasilov''', '''javier-tello'''
+    author='''dvasilov, javier-tello''',
     author_email='''''',
 
     # Choose your license
