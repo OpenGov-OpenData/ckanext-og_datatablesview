@@ -1,17 +1,14 @@
 {% extends "base.html" %}
 
-{% set ckan_29_or_higher = h.version(h.ckan_version()) > h.version('2.9') %}
+{% set ajax_url = h.url_for('ogdatatablesview.ajax', resource_view_id=resource_view.id) %}
+{% set filtered_download_action = h.url_for('ogdatatablesview.filtered_download', resource_view_id=resource_view.id) %}
+
+{% set ckan_29_or_higher = h.version(h.ckan_version()) >= h.version('2.9') %}
 
 {% if ckan_29_or_higher %}
-    {% set ajax_url = h.url_for('datatablesview.ajax', resource_view_id=resource_view.id)  %}
-    {% set ajax_data = request.args.get('filters', '')|e %}
-    {% set filtered_download_action = h.url_for('datatablesview.filtered_download', resource_view_id=resource_view.id) %}
-    {% set filtered_download_data = request.args.get('filters', '')|e %}
+  {% set data_filters = request.args.get('filters', '')|e %}
 {% else %}
-    {% set ajax_url = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='ajax', resource_view_id=resource_view.id) %}
-    {% set ajax_data = request.params.get('filters', '')|e %}
-    {% set filtered_download_action = h.url_for(controller='ckanext.og_datatablesview.controller:DataTablesController', action='filtered_download', resource_view_id=resource_view.id) %}
-    {% set filtered_download_data = request.params.get('filters', '')|e %}
+  {% set data_filters = request.params.get('filters', '')|e %}
 {% endif %}
 
 {% block page %}
@@ -25,7 +22,7 @@
       data-ajax='{
           "url":"{{ ajax_url }}",
           "type": "POST",
-          "data": { "filters": "{{ ajax_data }}" }
+          "data": { "filters": "{{ data_filters }}" }
         }'
       {% if resource_view.get('responsive') %}
         data-responsive="true"
@@ -52,7 +49,7 @@
           "text": "{{ _('Hide/Unhide Columns') }}"
         }{{ ', "copy", "print"' | safe
           if resource_view.get('copy_print_buttons') else ''}}
-        ]'
+      ]'
       {% if resource_view.get('export_button') %}
         display-export-button="true"
       {% else %}
@@ -75,7 +72,7 @@
   </table>
 
   <form id="filtered-datatables-download" method="POST" action="{{ filtered_download_action }}">
-    <input type="hidden" name="filters" value="{{ filtered_download_data }}" />
+    <input type="hidden" name="filters" value="{{ data_filters }}" />
   </form>
 {% endblock %}
 

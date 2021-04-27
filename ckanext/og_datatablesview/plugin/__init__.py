@@ -1,4 +1,5 @@
 # encoding: utf-8
+
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 from ckan.exceptions import CkanVersionException
@@ -10,6 +11,7 @@ except CkanVersionException:
 else:
     from ckanext.og_datatablesview.plugin.flask_plugin import MixinPlugin
 from ckanext.og_datatablesview.helpers import version_builder
+
 
 default = toolkit.get_validator(u'default')
 boolean_validator = toolkit.get_validator(u'boolean_validator')

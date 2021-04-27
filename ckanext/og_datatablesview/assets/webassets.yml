@@ -1,5 +1,5 @@
 main-css:
-  output: datapreview/%(version)s_main.css
+  output: ogdatatablepreview/%(version)s_main.css
   contents:
     - vendor/Bootstrap-3.3.7/css/bootstrap.css
     - vendor/DataTables-1.10.15/css/dataTables.bootstrap.css
@@ -12,7 +12,7 @@ main-css:
     - vendor/ColReorder-1.4.1/css/colReorder.bootstrap.css
 
 main-js:
-  output: datapreview/%(version)s_main.js
+  output: ogdatatablepreview/%(version)s_main.js
   extra:
     preload:
       - base/main
