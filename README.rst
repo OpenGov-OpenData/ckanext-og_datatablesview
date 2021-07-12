@@ -63,7 +63,7 @@ To install ckanext-og_datatablesview:
 
      pip install ckanext-og_datatablesview
 
-3. Add ``og_datatablesview`` to the ``ckan.plugins`` setting in your CKAN
+3. Add ``og_datatables_view`` to the ``ckan.plugins`` setting in your CKAN
    config file (by default the config file is located at
    ``/etc/ckan/default/production.ini``).
 
@@ -102,12 +102,7 @@ Running the Tests
 
 To run the tests, do::
 
-    nosetests --nologcapture --with-pylons=test.ini
-
-To run the tests and produce a coverage report, first make sure you have
-coverage installed in your virtualenv (``pip install coverage``) then run::
-
-    nosetests --nologcapture --with-pylons=test.ini --with-coverage --cover-package=ckanext.og_datatablesview --cover-inclusive --cover-erase --cover-tests
+    pytest --disable-warnings
 
 
 ---------------------------------
