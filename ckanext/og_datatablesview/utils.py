@@ -8,7 +8,7 @@ from ckan.plugins.toolkit import get_action, request, h, requires_ckan_version
 from ckan.exceptions import CkanVersionException
 
 
-def remove_null_values(records):
+def replace_none_with_empty_string(records):
     for record in records:
         for key in record.keys():
             if key != u'_id' and record[key] is None:
@@ -108,7 +108,7 @@ def ajax(resource_view_id):
         u"filters": filters,
     })
 
-    remove_null_values(response['records'])
+    replace_none_with_empty_string(response['records'])
 
     return json.dumps({
         u'draw': draw,

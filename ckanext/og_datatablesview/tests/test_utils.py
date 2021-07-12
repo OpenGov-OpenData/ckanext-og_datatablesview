@@ -1,5 +1,3 @@
-import pytest
-
 import ckanext.og_datatablesview.utils as utils
 
 
@@ -12,7 +10,7 @@ class TestUtils:
             {"name": "Adam", "age": None}
         ]
 
-        utils.remove_null_values(records)
+        utils.replace_none_with_empty_string(records)
 
         numeric_values = [r['age'] for r in records]
         assert(None not in numeric_values)
