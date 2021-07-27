@@ -38,7 +38,7 @@
       {% endif %}
       {% set sort_index = resource_view.get('sort_index') %}
       {% set sort_order = resource_view.get('sort_order') %}
-      {% if sort_index >= 0 and sort_order %}
+      {% if sort_index and sort_order %}
         data-order='[ [ {{ sort_index }}, "{{sort_order}}" ] ]'
       {% endif %}
       data-fixed-header="true"
@@ -77,22 +77,9 @@
 {% endblock %}
 
 {% block styles %}
-    {% set _type = 'asset' if ckan_29_or_higher else 'resource'  %}
-    {% snippet 'snippets/datatables_' ~ _type ~ '.html' %}
+  {% set _type = 'asset' if ckan_29_or_higher else 'resource'  %}
+  {% snippet 'snippets/datatables_' ~ _type ~ '.html' %}
 {% endblock %}
 
 {% block custom_styles %}
-<style>
-  @media (min-width: 767px) {
-    .dt-buttons {
-      float: right;
-    }
-    div.dataTables_wrapper div.dataTables_info {
-      float: left;
-    }
-    div.dataTables_wrapper div.dataTables_filter {
-      padding-top: 8px;
-    }
-  }
-</style>
 {% endblock %}

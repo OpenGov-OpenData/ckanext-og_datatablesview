@@ -1,0 +1,26 @@
+body {
+  background: none;
+}
+
+
+/* right align datatable buttons */
+@media (min-width: 767px) {
+  div.dt-buttons {
+    float: right;
+  }
+  div.dataTables_wrapper div.dataTables_info {
+    float: left;
+  }
+  div.dataTables_wrapper div.dataTables_filter {
+    padding-top: 8px;
+  }
+}
+
+
+/* add Bootstrap font */
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.eot');
+  src: url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.woff') format('woff'), url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('vendor/Bootstrap-3.3.7/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}

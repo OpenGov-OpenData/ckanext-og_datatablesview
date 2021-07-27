@@ -8,16 +8,9 @@ from ckan.plugins.toolkit import get_action, request, h, requires_ckan_version
 from ckan.exceptions import CkanVersionException
 
 
-def replace_none_with_empty_string(records):
-    for record in records:
-        for key in record.keys():
-            if key != u'_id' and record[key] is None:
-                record[key] = ''
-
-
 def get_compatible_request_parameters():
     u'''
-    Get Flask or Pylons own request objects depending on CKAN version
+    Get Flask or Pylons request objects depending on CKAN version
     '''
     try:
         requires_ckan_version("2.9")
@@ -52,11 +45,6 @@ def merge_filters(view_filters, user_filters_str):
     for k in user_filters:
         filters[k] = user_filters[k]
     return filters
-
-
-###############################################################################
-#                                  Controller                                 #
-###############################################################################
 
 
 def ajax(resource_view_id):
@@ -96,6 +84,7 @@ def ajax(resource_view_id):
         sort_list.append(cols[sort_by_num] + u' ' + sort_order)
         i += 1
 
+    # Add default sorting
     if u'_id asc' not in sort_list and u'_id desc' not in sort_list:
         sort_list.append(u'_id asc')
 
@@ -104,21 +93,26 @@ def ajax(resource_view_id):
         u"resource_id": resource_view[u'resource_id'],
         u"offset": offset,
         u"limit": limit,
-        u"sort": sort_list,
+        u"sort": u', '.join(sort_list),
         u"filters": filters,
     })
 
-    replace_none_with_empty_string(response['records'])
+    records_data = []
+    for row in response[u'records']:
+        record = [
+            text_type(row.get(colname, u'')) if row.get(colname) is not None
+            else u'' for colname in cols
+        ]
+        records_data.append(record)
 
-    return json.dumps({
+    dtdata = {
         u'draw': draw,
         u'iTotalRecords': unfiltered_response.get(u'total', 0),
         u'iTotalDisplayRecords': response.get(u'total', 0),
-        u'aaData': [
-            [text_type(row.get(colname, u'')) for colname in cols]
-            for row in response['records']
-        ],
-    })
+        u'aaData': records_data
+    }
+
+    return json.dumps(dtdata)
 
 
 def filtered_download(resource_view_id):

@@ -4,13 +4,14 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 from ckan.exceptions import CkanVersionException
 
+from ckanext.og_datatablesview.helpers import version_builder
+
 try:
     toolkit.requires_ckan_version("2.9")
 except CkanVersionException:
     from ckanext.og_datatablesview.plugin.pylons_plugin import MixinPlugin
 else:
     from ckanext.og_datatablesview.plugin.flask_plugin import MixinPlugin
-from ckanext.og_datatablesview.helpers import version_builder
 
 
 default = toolkit.get_validator(u'default')
@@ -32,9 +33,11 @@ class OG_DataTablesView(MixinPlugin):
     # IConfigurer
     def update_config(self, config):
         '''
-        Load config and set up the resource library,
-        public directory and template directory for the view
+        Set up the resource library, public directory and
+        template directory for the view
         '''
+
+        # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
             config.get(u'ckan.datatables.page_length_choices',
                        DEFAULT_PAGE_LENGTH_CHOICES))
