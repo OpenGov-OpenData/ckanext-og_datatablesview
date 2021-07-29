@@ -1,10 +1,18 @@
 # encoding: utf-8
 
-from logging import getLogger
-
-from ckan.common import json
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
+from ckan.exceptions import CkanVersionException
+
+from ckanext.og_datatablesview.helpers import version_builder
+
+try:
+    toolkit.requires_ckan_version("2.9")
+except CkanVersionException:
+    from ckanext.og_datatablesview.plugin.pylons_plugin import MixinPlugin
+else:
+    from ckanext.og_datatablesview.plugin.flask_plugin import MixinPlugin
+
 
 default = toolkit.get_validator(u'default')
 boolean_validator = toolkit.get_validator(u'boolean_validator')
@@ -14,27 +22,32 @@ ignore_missing = toolkit.get_validator(u'ignore_missing')
 DEFAULT_PAGE_LENGTH_CHOICES = '10 25 50 100'
 
 
-class OG_DataTablesView(p.SingletonPlugin):
+class OG_DataTablesView(MixinPlugin):
     '''
     DataTables table view plugin
     '''
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
-    p.implements(p.IRoutes, inherit=True)
+    p.implements(p.ITemplateHelpers)
 
+    # IConfigurer
     def update_config(self, config):
         '''
-        Load config and set up the resource library,
-        public directory and template directory for the view
+        Set up the resource library, public directory and
+        template directory for the view
         '''
+
+        # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
             config.get(u'ckan.datatables.page_length_choices',
                        DEFAULT_PAGE_LENGTH_CHOICES))
         self.page_length_choices = [int(i) for i in self.page_length_choices]
 
-        toolkit.add_template_directory(config, u'templates')
-        toolkit.add_resource('public', u'ckanext-og_datatablesview')
+        toolkit.add_template_directory(config, u'../templates')
+        toolkit.add_public_directory(config, u'../assets')
+        toolkit.add_resource('../assets', u'ckanext-og_datatablesview')
 
+    # IResourceView
     def can_view(self, data_dict):
         resource = data_dict['resource']
         return resource.get(u'datastore_active')
@@ -75,15 +88,8 @@ class OG_DataTablesView(p.SingletonPlugin):
             }
         }
 
-    def before_map(self, m):
-        m.connect(
-            u'/og_datatables/ajax/{resource_view_id}',
-            controller=u'ckanext.og_datatablesview.controller'
-                       u':DataTablesController',
-            action=u'ajax')
-        m.connect(
-            u'/og_datatables/filtered-download/{resource_view_id}',
-            controller=u'ckanext.og_datatablesview.controller'
-                       u':DataTablesController',
-            action=u'filtered_download')
-        return m
+    # ITemplateHelpers
+    def get_helpers(self):
+        return {
+            'version': version_builder,
+        }
