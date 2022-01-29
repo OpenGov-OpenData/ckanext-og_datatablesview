@@ -2,6 +2,7 @@ import pytest
 
 import ckan.plugins as p
 from ckan.tests import factories
+import ckan.logic as logic
 import ckanext.og_datatablesview.utils as test_utils
 
 
@@ -13,7 +14,6 @@ class TestUtils:
         dataset = factories.Dataset()
         resource = factories.Resource(
             package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
             format='CSV'
         )
         resource_view = factories.ResourceView(
@@ -31,35 +31,11 @@ class TestUtils:
         assert response.get('view_type') == 'og_datatables_view'
 
 
-    def test_og_datatableview_on_resource_page_failure(self):
-        sysadmin = factories.Sysadmin()
-        dataset = factories.Dataset()
-        resource = factories.Resource(
-            package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
-            format='CSV'
-        )
-        resource_view = factories.ResourceView(
-            resource_id=resource['id'],
-            title='OG Data Tables',
-            view_type='og_datatables_view'
-        )
-
-        response = p.toolkit.get_action('resource_view_show')(
-            {'user': sysadmin.get('name')},
-            {'id': resource_view.get('id')}
-        )
-
-        assert not response.get('title') == 'Data Tables'
-        assert not response.get('view_type') == 'datatables_view'
-
-
     def test_og_datatableview_display_copy_button_success(self):
         sysadmin = factories.Sysadmin()
         dataset = factories.Dataset()
         resource = factories.Resource(
             package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
             format='CSV'
         )
         resource_view = factories.ResourceView(
@@ -77,35 +53,11 @@ class TestUtils:
         assert response.get('copy_print_buttons') == True
 
 
-    def test_og_datatableview_display_copy_button_failure(self):
-        sysadmin = factories.Sysadmin()
-        dataset = factories.Dataset()
-        resource = factories.Resource(
-            package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
-            format='CSV'
-        )
-        resource_view = factories.ResourceView(
-            resource_id=resource['id'],
-            title='OG Data Tables',
-            view_type='og_datatables_view',
-            copy_print_buttons=False
-        )
-
-        response = p.toolkit.get_action('resource_view_show')(
-            {'user': sysadmin.get('name')},
-            {'id': resource_view.get('id')}
-        )
-
-        assert response.get('copy_print_buttons') == False
-
-
     def test_og_datatableview_display_export_button_success(self):
         sysadmin = factories.Sysadmin()
         dataset = factories.Dataset()
         resource = factories.Resource(
             package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
             format='CSV'
         )
         resource_view = factories.ResourceView(
@@ -123,34 +75,11 @@ class TestUtils:
         assert response.get('export_button') == True
 
 
-    def test_og_datatableview_display_export_button_failure(self):
-        sysadmin = factories.Sysadmin()
-        dataset = factories.Dataset()
-        resource = factories.Resource(
-            package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
-            format='CSV'
-        )
-        resource_view = factories.ResourceView(
-            resource_id=resource['id'],
-            title='OG Data Tables',
-            view_type='og_datatables_view',
-            export_button=False
-        )
-
-        response = p.toolkit.get_action('resource_view_show')(
-            {'user': sysadmin.get('name')},
-            {'id': resource_view.get('id')}
-        )
-
-        assert response.get('export_button') == False
-
     def test_og_datatableview_custom_options_success(self):
         sysadmin = factories.Sysadmin()
         dataset = factories.Dataset()
         resource = factories.Resource(
             package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
             format='CSV'
         )
         resource_view = factories.ResourceView(
@@ -175,42 +104,11 @@ class TestUtils:
         assert response.get('col_reorder') == False
 
 
-    def test_og_datatableview_custom_options_failure(self):
-        sysadmin = factories.Sysadmin()
-        dataset = factories.Dataset()
-        resource = factories.Resource(
-            package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
-            format='CSV'
-        )
-        resource_view = factories.ResourceView(
-            resource_id=resource['id'],
-            title='OG Data Tables',
-            view_type='og_datatables_view',
-            export_button=True,
-            responsive=True,
-            copy_print_buttons=False,
-            col_reorder=False
-
-        )
-
-        response = p.toolkit.get_action('resource_view_show')(
-            {'user': sysadmin.get('name')},
-            {'id': resource_view.get('id')}
-        )
-
-        assert response.get('export_button') != False
-        assert response.get('responsive') != False
-        assert response.get('copy_print_buttons') != True
-        assert response.get('col_reorder') != True
-
-
     def test_og_datatableview_change_show_columns_success(self):
         sysadmin = factories.Sysadmin()
         dataset = factories.Dataset()
         resource = factories.Resource(
             package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
             format='CSV'
         )
         resource_view = factories.ResourceView(
@@ -218,10 +116,12 @@ class TestUtils:
             title='OG Data Tables',
             view_type='og_datatables_view',
             show_fields= [
+                "_id",
                 "permitnumber",
                 "worktype",
                 "permittypedescr",
                 "description",
+                "comments",
                 "applicant",
                 "declared_valuation",
                 "total_fees",
@@ -247,71 +147,6 @@ class TestUtils:
         )
 
         assert response.get('show_fields') == [
-            "permitnumber",
-            "worktype",
-            "permittypedescr",
-            "description",
-            "applicant",
-            "declared_valuation",
-            "total_fees",
-            "issued_date",
-            "expiration_date",
-            "status",
-            "owner",
-            "occupancytype",
-            "sq_feet",
-            "address",
-            "city",
-            "state",
-            "zip",
-            "property_id",
-            "parcel_id",
-            "location"
-        ]
-
-
-    def test_og_datatableview_change_show_columns_failure(self):
-        sysadmin = factories.Sysadmin()
-        dataset = factories.Dataset()
-        resource = factories.Resource(
-            package_id=dataset['id'],
-            url='https://cloudcity.ogopendata.com/dataset/e8350e79-172a-4dca-b971-362380f81332/resource/3626b679-5bde-4582-bc0b-ff2ac66cf440/download/approved-building-permits_analyze-boston.csv',
-            format='CSV'
-        )
-        resource_view = factories.ResourceView(
-            resource_id=resource['id'],
-            title='OG Data Tables',
-            view_type='og_datatables_view',
-            show_fields= [
-                "permitnumber",
-                "worktype",
-                "permittypedescr",
-                "description",
-                "applicant",
-                "declared_valuation",
-                "total_fees",
-                "issued_date",
-                "expiration_date",
-                "status",
-                "owner",
-                "occupancytype",
-                "sq_feet",
-                "address",
-                "city",
-                "state",
-                "zip",
-                "property_id",
-                "parcel_id",
-                "location"
-            ]
-        )
-
-        response = p.toolkit.get_action('resource_view_show')(
-            {'user': sysadmin.get('name')},
-            {'id': resource_view.get('id')}
-        )
-
-        assert response.get('show_fields') != [
             "_id",
             "permitnumber",
             "worktype",
@@ -336,3 +171,66 @@ class TestUtils:
             "location"
         ]
 
+
+    def test_og_datatableview_delete_resource_view_success(self):
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view'
+        )
+
+        resource_view_id = resource_view.get('id')
+
+        resource_view_delete_response = p.toolkit.get_action('resource_view_delete')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view_id}
+        )
+
+        with pytest.raises(logic.NotFound):
+            resource_view_show_response = p.toolkit.get_action('resource_view_show')(
+                {'user': sysadmin.get('name')},
+                {'id': resource_view_id}
+            )
+
+
+    def test_og_datatableview_only_modify_one_view_success(self):
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view_1 = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables 1',
+            view_type='og_datatables_view'
+        )
+
+        resource_view_2 = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables 2',
+            view_type='og_datatables_view'
+        )
+
+        resource_view_update_response = p.toolkit.get_action('resource_view_update')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view_1.get('id')},
+            {'description': 'Testing resource view update call'}
+        )
+
+        response_1 = p.toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view_1.get('id')}
+        )
+
+        response_2 = p.toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view_2.get('id')}
+        )
+        assert respons_1.get('description') != response_2.get('description')
