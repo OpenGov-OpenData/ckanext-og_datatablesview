@@ -211,7 +211,6 @@ class TestUtils:
             title='OG Data Tables 1',
             view_type='og_datatables_view'
         )
-
         resource_view_2 = factories.ResourceView(
             resource_id=resource['id'],
             title='OG Data Tables 2',
@@ -220,7 +219,7 @@ class TestUtils:
 
         resource_view_update_response = p.toolkit.get_action('resource_view_update')(
             {'user': sysadmin.get('name')},
-            {'id': resource_view_1.get('id'), 'description': 'Testing resource view update call'},
+            {'id': resource_view_1.get('id'), 'description': 'Testing resource view update'},
         )
 
         response_1 = p.toolkit.get_action('resource_view_show')(
@@ -232,4 +231,6 @@ class TestUtils:
             {'user': sysadmin.get('name')},
             {'id': resource_view_2.get('id')}
         )
+
+        assert response_1.get('description') == 'Testing resource view update'
         assert response_1.get('description') != response_2.get('description')
