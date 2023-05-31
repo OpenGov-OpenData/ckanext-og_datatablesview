@@ -80,7 +80,7 @@ class OG_DataTablesView(MixinPlugin):
                 u'responsive': [default(False), boolean_validator],
                 u'export_button': [default(False), boolean_validator],
                 u'copy_print_buttons': [default(False), boolean_validator],
-                u'col_reorder': [default(False), boolean_validator],
+                u'col_reorder': [default(True), boolean_validator],
                 u'show_fields': [ignore_missing],
                 u'sort_column': [ignore_missing],
                 u'sort_order': [ignore_missing],
