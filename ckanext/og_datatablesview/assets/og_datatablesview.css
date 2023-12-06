@@ -2,6 +2,12 @@ body {
   background: none;
 }
 
+.dataTables_scrollHead {
+  position: sticky !important;
+  top: 0px;
+  z-index: 99;
+  background-color: white;
+}
 
 /* right align datatable buttons */
 @media (min-width: 767px) {
