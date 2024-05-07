@@ -37,13 +37,13 @@ class OG_DataTablesView(MixinPlugin):
         template directory for the view
         '''
 
-        self.responsive_button_def = toolkit.aslist(
+        self.responsive_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_responsive_default', False))
-        self.copy_print_buttons_def = toolkit.aslist(
+        self.copy_print_buttons_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_displaycopyprint_default', False))
-        self.export_button_def = toolkit.aslist(
+        self.export_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_displayexport_default', False))
-        self.col_reorder_def = toolkit.aslist(
+        self.col_reorder_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_colreorder_default', True))
         
         # https://datatables.net/reference/option/lengthMenu
