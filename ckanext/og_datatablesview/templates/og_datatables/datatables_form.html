@@ -4,25 +4,41 @@
     <label class="control-label">Table Options</label>
     <div class="controls">
         <label class="checkbox" for="field-responsive" title="Optimize table layout for smaller screen sizes">
-            <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive }}>
+            {% if resource_view.id %}
+                <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive }}>
+            {% else %}
+                <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive_button_def }}>
+            {% endif %}
             Enable responsive display
         </label>
     </div>
     <div class="controls">
         <label class="checkbox" for="field-export_button" title="Display Export button">
-            <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
+            {% if resource_view.id %}
+                <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
+            {% else %}
+                <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button_def }}>
+            {% endif %}
             Display Export button
         </label>
     </div>
     <div class="controls">
         <label class="checkbox" for="field-copy_print_buttons" title="Display Copy and Print buttons">
-            <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons }}>
+            {% if resource_view.id %}
+                <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons }}>
+            {% else %}
+                <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons_def }}>
+            {% endif %}
             Display Copy and Print buttons
         </label>
     </div>
     <div class="controls">
         <label class="checkbox" for="field-col_reorder" title="Allow users to reorder columns through a drag and drag operation">
-            <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder }}>
+            {% if resource_view.id %}
+                <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder }}>
+            {% else %}
+                <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder_def }}>
+            {% endif %}
             Allow column reorder
         </label>
     </div>

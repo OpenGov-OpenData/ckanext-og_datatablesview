@@ -37,6 +37,15 @@ class OG_DataTablesView(MixinPlugin):
         template directory for the view
         '''
 
+        self.responsive_button_def = toolkit.aslist(
+            config.get(u'ckan_datatables_view_table_responsive_default', False))
+        self.copy_print_buttons_def = toolkit.aslist(
+            config.get(u'ckan_datatables_view_table_displaycopyprint_default', False))
+        self.export_button_def = toolkit.aslist(
+            config.get(u'ckan_datatables_view_table_displayexport_default', False))
+        self.col_reorder_def = toolkit.aslist(
+            config.get(u'ckan_datatables_view_table_colreorder_default', True))
+        
         # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
             config.get(u'ckan.datatables.page_length_choices',
@@ -66,6 +75,10 @@ class OG_DataTablesView(MixinPlugin):
         return u'og_datatables/datatables_view.html'
 
     def form_template(self, context, data_dict):
+        data_dict['resource_view']['responsive_button_def'] = self.responsive_button_def
+        data_dict['resource_view']['copy_print_buttons_def'] = self.copy_print_buttons_def
+        data_dict['resource_view']['export_button_def'] = self.export_button_def
+        data_dict['resource_view']['col_reorder_def'] = self.col_reorder_def
         return u'og_datatables/datatables_form.html'
 
     def info(self):
@@ -80,7 +93,8 @@ class OG_DataTablesView(MixinPlugin):
                 u'responsive': [default(False), boolean_validator],
                 u'export_button': [default(False), boolean_validator],
                 u'copy_print_buttons': [default(False), boolean_validator],
-                u'col_reorder': [default(True), boolean_validator],
+                # We cannot use default(True) here, as the browser POSTs a null value when user unchecks the checkbox
+                u'col_reorder': [default(False), boolean_validator],
                 u'show_fields': [ignore_missing],
                 u'sort_column': [ignore_missing],
                 u'sort_order': [ignore_missing],
