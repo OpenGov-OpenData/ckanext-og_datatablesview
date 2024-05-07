@@ -38,13 +38,13 @@ class OG_DataTablesView(MixinPlugin):
         '''
 
         self.responsive_button_def = toolkit.aslist(
-            config.get(u'ckan_datatables_view_table_responsive_default', False))
+            config.get(u'ckan.datatables.view_table_responsive_default', False))
         self.copy_print_buttons_def = toolkit.aslist(
-            config.get(u'ckan_datatables_view_table_displaycopyprint_default', False))
+            config.get(u'ckan.datatables.view_table_displaycopyprint_default', False))
         self.export_button_def = toolkit.aslist(
-            config.get(u'ckan_datatables_view_table_displayexport_default', False))
+            config.get(u'ckan.datatables.view_table_displayexport_default', False))
         self.col_reorder_def = toolkit.aslist(
-            config.get(u'ckan_datatables_view_table_colreorder_default', True))
+            config.get(u'ckan.datatables.view_table_colreorder_default', True))
         
         # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
