@@ -3,6 +3,10 @@
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 from ckan.exceptions import CkanVersionException
+import ckan.lib.navl.dictization_functions as df
+
+missing = df.missing
+
 
 from ckanext.og_datatablesview.helpers import version_builder
 
@@ -29,6 +33,7 @@ class OG_DataTablesView(MixinPlugin):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
     p.implements(p.ITemplateHelpers)
+    p.implements(p.IValidators)
 
     # IConfigurer
     def update_config(self, config):
@@ -45,6 +50,8 @@ class OG_DataTablesView(MixinPlugin):
             config.get(u'ckan.datatables.view_table_displayexport_default', False))
         self.col_reorder_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_colreorder_default', True))
+        self.col_unhide_button_def = toolkit.asbool(
+            config.get(u'ckan.datatables.view_table_colunhide_default', True))
         
         # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
@@ -79,6 +86,7 @@ class OG_DataTablesView(MixinPlugin):
         data_dict['resource_view']['copy_print_buttons_def'] = self.copy_print_buttons_def
         data_dict['resource_view']['export_button_def'] = self.export_button_def
         data_dict['resource_view']['col_reorder_def'] = self.col_reorder_def
+        data_dict['resource_view']['col_unhide_button_def'] = self.col_unhide_button_def
         return u'og_datatables/datatables_form.html'
 
     def info(self):
@@ -90,14 +98,37 @@ class OG_DataTablesView(MixinPlugin):
             u'requires_datastore': True,
             u'default_title': p.toolkit._(u'Data Table'),
             u'schema': {
-                u'responsive': [default(False), boolean_validator],
-                u'export_button': [default(False), boolean_validator],
-                u'copy_print_buttons': [default(False), boolean_validator],
-                # We cannot use default(True) here, as the browser POSTs a null value when user unchecks the checkbox
-                u'col_reorder': [default(False), boolean_validator],
+
+                # The root of the problem here is that this info(self) method is called on two different scenarios:
+                # 1. When the user is creating/updating a view with their browser (form_template method)
+                # 2. When ckan is creating a new view from a resource that was just uploaded (ckan.views.default_views)
+
+                # Why we cannot use the default(True) validator here:
+                # When the web user unchecks the checkbox and saves, the browser POSTs a null value for 
+                # that key, so: if the user unchecked the checkbox and saved, the value will be null
+                # and if we have default(True) validator, it will be set to True, as the 
+                # validator will replace the null value with true, which is the opposite of what the user wanted 
+                # (The CRD that started this issue)
+
+                # We also cannot use the default(False) validator here, 
+                # When you upload a new csv, ckan will automatically create a DataTable view using this info() method
+                # and we need it to use the configurable values when that happens, not a hardcoded value. The problem 
+                # there is, when the view is being created by ckan, it doesn't use the form_template() method above,
+                # so the configurable defaults are not being followed. 
+                
+                # The only way to fix both problems is writing our own validator, because Null means either the user 
+                # unchecked the checkbox or the view is being created by ckan. If it was the user, it should be false, 
+                # if it was CKAN, it should be the default value by configuration.
+                u'responsive': [configurabledefaults_validator(self.responsive_button_def), boolean_validator],
+                u'export_button': [configurabledefaults_validator(self.export_button_def), boolean_validator],
+                u'copy_print_buttons': [configurabledefaults_validator(self.copy_print_buttons_def), boolean_validator],
+                u'col_unhide_button': [configurabledefaults_validator(self.col_unhide_button_def), boolean_validator],
+                u'col_reorder': [configurabledefaults_validator(self.col_reorder_def), boolean_validator],
                 u'show_fields': [ignore_missing],
                 u'sort_column': [ignore_missing],
                 u'sort_order': [ignore_missing],
+                # It's ok to use the default(True) validator here, as the user cannot uncheck the checkbox, 
+                # it is not part of the html form, it is hardcoded by the extension.
                 u'filterable': [default(True), boolean_validator]
             }
         }
@@ -107,3 +138,27 @@ class OG_DataTablesView(MixinPlugin):
         return {
             'version': version_builder,
         }
+    
+    # IValidators
+    def get_validators(self):
+        return {
+            'configurabledefaults_validator': configurabledefaults_validator,
+        }
+
+
+def configurabledefaults_validator(default_configurable_value):
+    def callable(key, data, errors, context):
+        # looking at the "for_view" property we can determine if the view is being created 
+        # by the internal default view mechanism or by the user's browser
+        if context.get('for_view'):
+            # This means the user is creating/editing the view with their browser
+            # so we set the values chosen by the user, 
+            if data.get(key) is missing or data.get(key) is None or data.get(key) == '':
+                # When the web user unchecks the checkbox and saves, 
+                # the browser POSTs a null value, so we set it to False
+                data[key] = False
+        else:
+            # the view is being created by the default view mechanism, 
+            # so we set the values following the configurable defaults
+            data[key] = default_configurable_value
+    return callable
