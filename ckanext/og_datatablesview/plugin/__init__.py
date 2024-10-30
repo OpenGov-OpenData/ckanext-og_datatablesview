@@ -44,14 +44,14 @@ class OG_DataTablesView(MixinPlugin):
 
         self.responsive_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_responsive_default', False))
-        self.copy_print_buttons_def = toolkit.asbool(
-            config.get(u'ckan.datatables.view_table_displaycopyprint_default', False))
-        self.export_button_def = toolkit.asbool(
-            config.get(u'ckan.datatables.view_table_displayexport_default', False))
-        self.col_reorder_def = toolkit.asbool(
-            config.get(u'ckan.datatables.view_table_colreorder_default', True))
         self.col_unhide_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_colunhide_default', True))
+        self.export_button_def = toolkit.asbool(
+            config.get(u'ckan.datatables.view_table_displayexport_default', False))
+        self.copy_print_buttons_def = toolkit.asbool(
+            config.get(u'ckan.datatables.view_table_displaycopyprint_default', False))
+        self.col_reorder_def = toolkit.asbool(
+            config.get(u'ckan.datatables.view_table_colreorder_default', True))
         
         # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
@@ -83,10 +83,10 @@ class OG_DataTablesView(MixinPlugin):
 
     def form_template(self, context, data_dict):
         data_dict['resource_view']['responsive_button_def'] = self.responsive_button_def
-        data_dict['resource_view']['copy_print_buttons_def'] = self.copy_print_buttons_def
-        data_dict['resource_view']['export_button_def'] = self.export_button_def
-        data_dict['resource_view']['col_reorder_def'] = self.col_reorder_def
         data_dict['resource_view']['col_unhide_button_def'] = self.col_unhide_button_def
+        data_dict['resource_view']['export_button_def'] = self.export_button_def
+        data_dict['resource_view']['copy_print_buttons_def'] = self.copy_print_buttons_def
+        data_dict['resource_view']['col_reorder_def'] = self.col_reorder_def
         return u'og_datatables/datatables_form.html'
 
     def info(self):
@@ -120,9 +120,9 @@ class OG_DataTablesView(MixinPlugin):
                 # unchecked the checkbox or the view is being created by ckan. If it was the user, it should be false, 
                 # if it was CKAN, it should be the default value by configuration.
                 u'responsive': [configurabledefaults_validator(self.responsive_button_def), boolean_validator],
+                u'col_unhide_button': [configurabledefaults_validator(self.col_unhide_button_def), boolean_validator],
                 u'export_button': [configurabledefaults_validator(self.export_button_def), boolean_validator],
                 u'copy_print_buttons': [configurabledefaults_validator(self.copy_print_buttons_def), boolean_validator],
-                u'col_unhide_button': [configurabledefaults_validator(self.col_unhide_button_def), boolean_validator],
                 u'col_reorder': [configurabledefaults_validator(self.col_reorder_def), boolean_validator],
                 u'show_fields': [ignore_missing],
                 u'sort_column': [ignore_missing],

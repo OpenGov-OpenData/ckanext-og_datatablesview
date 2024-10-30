@@ -13,6 +13,16 @@
         </label>
     </div>
     <div class="controls">
+        <label class="checkbox" for="field-col_unhide_button" title="Display Hide/Unhide Columns button">
+            {% if resource_view.id %}
+                <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button }}>
+            {% else %}
+                <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button_def }}>
+            {% endif %}
+            Display Hide/Unhide Columns button
+        </label>
+    </div>
+    <div class="controls">
         <label class="checkbox" for="field-export_button" title="Display Export button">
             {% if resource_view.id %}
                 <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
