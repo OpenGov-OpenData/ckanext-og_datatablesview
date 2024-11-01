@@ -42,13 +42,20 @@
         data-order='[ [ {{ sort_index }}, "{{sort_order}}" ] ]'
       {% endif %}
       data-dom='"Blifrtip"'
-      data-buttons='[
-        {
-          "extend": "colvis",
-          "text": "{{ _('Hide/Unhide Columns') }}"
-        }{{ ', "copy", "print"' | safe
-          if resource_view.get('copy_print_buttons') else ''}}
-      ]'
+      {% if resource_view.get('col_unhide_button') %}
+        data-buttons='[
+          {
+            "extend": "colvis",
+            "text": "{{ _('Hide/Unhide Columns') }}"
+          }
+          {{ ', "copy", "print"' | safe
+            if resource_view.get('copy_print_buttons') else ''}}
+        ]'
+      {% else %}
+        data-buttons='[ {{ ', "copy", "print"' | safe
+            if resource_view.get('copy_print_buttons') else ''}}
+        ]'
+      {% endif %}
       {% if resource_view.get('export_button') %}
         display-export-button="true"
       {% else %}
