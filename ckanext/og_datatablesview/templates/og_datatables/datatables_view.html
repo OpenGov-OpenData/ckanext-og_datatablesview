@@ -52,7 +52,8 @@
             if resource_view.get('copy_print_buttons') else ''}}
         ]'
       {% else %}
-        data-buttons='[ {{ ', "copy", "print"' | safe
+        data-buttons='[
+          {{ '"copy", "print"' | safe
             if resource_view.get('copy_print_buttons') else ''}}
         ]'
       {% endif %}
