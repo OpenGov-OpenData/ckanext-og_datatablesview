@@ -10,7 +10,7 @@
 {% else %}
   {% set data_filters = request.params.get('filters', '')|e %}
 {% endif %}
-
+{% block subtitle %}{{ h.resource_display_name(resource) }}{% endblock %}
 {% block page %}
   <table id="dtprv"
       class="table table-striped table-bordered"
