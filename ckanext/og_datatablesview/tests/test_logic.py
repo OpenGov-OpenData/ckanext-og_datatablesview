@@ -1,9 +1,7 @@
 import pytest
 
-import ckan.plugins as p
+import ckan.plugins.toolkit as toolkit
 from ckan.tests import factories
-import ckan.logic as logic
-import ckanext.og_datatablesview.utils as test_utils
 
 
 @pytest.mark.usefixtures("clean_db")
@@ -22,7 +20,7 @@ class TestUtils:
             view_type='og_datatables_view'
         )
 
-        response = p.toolkit.get_action('resource_view_show')(
+        response = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view.get('id')}
         )
@@ -192,7 +190,7 @@ class TestUtils:
             {'id': resource_view_id}
         )
 
-        with pytest.raises(logic.NotFound):
+        with pytest.raises(toolkit.ObjectNotFound):
             resource_view_show_response = p.toolkit.get_action('resource_view_show')(
                 {'user': sysadmin.get('name')},
                 {'id': resource_view_id}

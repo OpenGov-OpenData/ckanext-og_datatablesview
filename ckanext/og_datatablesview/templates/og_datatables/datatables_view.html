@@ -1,77 +1,79 @@
 {% extends "base.html" %}
 
+{% block title %}{{ h.dataset_display_name(package)}}&mdash;{{ h.resource_display_name(resource)}} - {{ super() }}{% endblock %}
+{% block bodytag %}
+  {{- super() -}}
+  class="dt-view"
+{%- endblock -%}
+
+{% block page %}
 {% set ajax_url = h.url_for('ogdatatablesview.ajax', resource_view_id=resource_view.id) %}
 {% set filtered_download_action = h.url_for('ogdatatablesview.filtered_download', resource_view_id=resource_view.id) %}
 
-{% set ckan_29_or_higher = h.version(h.ckan_version()) >= h.version('2.9') %}
+{#- pass the datadictionary to javascript, so we can init columns there -#}
+{%- set datadictionary = h.datastore_dictionary(resource.id) -%}
+{%- set nbspval = "&nbsp;"|safe -%}
+<script type=text/javascript>
+    const gdataDict = {{ datadictionary|tojson }}
+    const gresviewId = '{{ resource_view.id }}'
+</script>
 
-{% if ckan_29_or_higher %}
-  {% set data_filters = request.args.get('filters', '')|e %}
-{% else %}
-  {% set data_filters = request.params.get('filters', '')|e %}
-{% endif %}
-
-{% block page %}
-  <table id="dtprv"
-      class="table table-striped table-bordered"
-      data-module="datatables_view"
-      data-paging="true"
-      data-length-menu="{{page_length_choices}}"
-      data-server-side="true"
-      data-processing="true"
-      data-ajax='{
-          "url":"{{ ajax_url }}",
-          "type": "POST",
-          "data": { "filters": "{{ data_filters }}" }
-        }'
-      {% if resource_view.get('responsive') %}
-        data-responsive="true"
-        data-scroll-x="false"
-      {% else %}
-        data-responsive="false"
-        data-scroll-x="true"
-      {% endif %}
-      {% if resource_view.get('col_reorder') %}
-        data-col-reorder="true"
-      {% else %}
-        data-col-reorder="false"
-      {% endif %}
+<div id="resize_wrapper">
+  <table id="dtprv" width="100%"
+      class="table table-striped table-bordered table-condensed table-hover"
+      data-module="og_datatables_view"
+      data-state-save-flag="{{ state_saving|lower }}"
+      data-state-duration="{{ state_duration }}"
+      data-ellipsis-length="{{ resource_view.ellipsis_length if resource_view.ellipsis_length is defined else ellipsis_length }}"
+      data-date-format="{{ resource_view.date_format  if resource_view.date_format is defined else date_format }}"
+      data-package-name="{{ package.name }}"
+      data-resource-name="{{ h.resource_display_name(resource) }}"
+      data-languagecode="{{ h.lang() }}"
+      data-languagefile="{{ h.url_for_static('vendor/DataTables/i18n/' + h.lang() + '.json') }}"
+      data-ajaxurl="{{ ajax_url }}"
+      data-ckanfilters="{{ request.args.get('filters', '')|e }}"
+      data-responsive-flag="{{ resource_view.get('responsive')|lower }}"
+      data-page-length-choices="{{ page_length_choices }}"
+      data-resource-url="{{ h.url_for('resource.read', id=package.name, resource_id=resource.id ) }}"
       {% set sort_index = resource_view.get('sort_index') %}
       {% set sort_order = resource_view.get('sort_order') %}
       {% if sort_index and sort_order %}
         data-order='[ [ {{ sort_index }}, "{{sort_order}}" ] ]'
       {% endif %}
-      data-dom='"Blifrtip"'
-      {% if resource_view.get('col_unhide_button') %}
-        data-buttons='[
-          {
-            "extend": "colvis",
-            "text": "{{ _('Hide/Unhide Columns') }}"
-          }
-          {{ ', "copy", "print"' | safe
-            if resource_view.get('copy_print_buttons') else ''}}
-        ]'
-      {% else %}
-        data-buttons='[
-          {{ '"copy", "print"' | safe
-            if resource_view.get('copy_print_buttons') else ''}}
-        ]'
-      {% endif %}
-      {% if resource_view.get('export_button') %}
-        display-export-button="true"
-      {% else %}
-        display-export-button="false"
-      {% endif %}
-      data-keys='true'
-    >
+      data-col-unhide-button="{{ resource_view.get('col_unhide_button') }}"
+      data-copy-print-buttons="{{ resource_view.get('copy_print_buttons') }}"
+      data-export-button="{{ resource_view.get('export_button') }}"
+      data-col-reorder="{{ resource_view.get('col_reorder')}}">
     <thead>
       <tr>
-        {% for field in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
-          {% if 'show_fields' not in resource_view
-            or field.id in resource_view.show_fields %}
-            <th scope="col">{{ field.id }}</th>
-          {% endif %}
-        {% endfor %}
+        <th class="all" data-name="_id">_id</th>
+        {% for field in datadictionary -%}
+          {% if 'show_fields' not in resource_view or field.id in resource_view.show_fields -%}
+            <th scope="col">
+            {%- if data_dictionary_labels and field.info is defined and field.info.label|length -%}
+              {{ field.info.label|replace(" ", nbspval) }}
+            {%- else -%}
+              {{ field.id|replace(" ", nbspval) }}
+            {%- endif -%}
+            &nbsp;
+            {%- if data_dictionary_labels and field.info is defined and (field.info.label|length or field.info.notes|length)-%}
+              <i class="fa fa-info-circle" title="{{field.id}} ({{field.type}})&#10;{{ h.markdown_extract(field.info.notes, 300) }}"></i>
+            {%- endif -%}
+            &nbsp;</th>
+          {%- endif %}
+        {% endfor -%}
+        <th id="_colspacer">colspacer</th>
+      </tr>
+      <tr>
+        <th></th>
+        {% for field in datadictionary -%}
+          {% if 'show_fields' not in resource_view or field.id in resource_view.show_fields -%}
+            <th id="cdx{{ loop.index }}" class="fhead" data-type="{{ field.type }}">
+                {{- field.id -}}
+            </th>
+          {% endif -%}
+        {% endfor -%}
+       <th id="_colspacerfilter" class="none"></th>
       </tr>
     </thead>
     <tbody>
@@ -79,14 +81,34 @@
   </table>
 
   <form id="filtered-datatables-download" method="POST" action="{{ filtered_download_action }}">
-    <input type="hidden" name="filters" value="{{ data_filters }}" />
+    <input type="hidden" name="filters" value="{{ request.args.get('filters', '')|e -}}" />
   </form>
+</div>
+
+{#- we do this macro instead of the snippet because the snippet pollutes the output with comments/whitespaces which #}
+{# may be invisible for regular html, but not for tooltips -#}
+{%- macro local_friendly_datetime(dt_obj) -%}
+   <span class="automatic-local-datetime" data-datetime="{{ h.render_datetime(dt_obj, date_format='%Y-%m-%dT%H:%M:%S%z') }}">
+    {{- h.render_datetime(dt_obj, with_hours=True) -}}
+   </span>
+{%- endmacro -%}
+
+{#- we create tooltip here instead of javascript so we can leverage the automatic-local-datetime class date conversion CKAN does -#}
+{%- set res = resource %}
+<div id="dtv-resource-info" style="display: none;">
+  {{- _('Data last updated') }}: {{ local_friendly_datetime(res.last_modified) }}&#10;
+  {{- _('Metadata last updated') }}: {{ local_friendly_datetime(res.metadata_modified) }}&#10;
+  {{- _('Created') }}: {{ local_friendly_datetime(res.created) }}&#10;
+  {{- res.format or res.mimetype_inner or res.mimetype or _('unknown') -}}&nbsp;
+  {%- if res.size|int != 0 -%}
+   ( {{ h.SI_number_span(res.size)|striptags }} )
+  {%- endif -%}
+</div>
 {% endblock %}
 
-{% block styles %}
-  {% set _type = 'asset' if ckan_29_or_higher else 'resource'  %}
-  {% snippet 'snippets/datatables_' ~ _type ~ '.html' %}
+{%- block styles -%}
+  {{- super() -}}
+  {% asset 'ckanext-og_datatablesview/main-css' %}
+  {% asset 'ckanext-og_datatablesview/main-js' %}
 {% endblock %}
-
-{% block custom_styles %}
-{% endblock %}
+{% block custom_styles %}{% endblock %}
