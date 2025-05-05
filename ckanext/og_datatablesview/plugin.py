@@ -3,6 +3,9 @@
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.navl.dictization_functions as df
+from typing import (
+    Any, Optional
+)
 from ckanext.og_datatablesview import blueprint
 
 missing = df.missing
@@ -23,6 +26,7 @@ class OG_DataTablesView(p.SingletonPlugin):
     p.implements(p.IResourceView, inherit=True)
     p.implements(p.IBlueprint)
     p.implements(p.IValidators)
+    p.implements(p.ITemplateHelpers)
 
     # IBlueprint
 
@@ -40,7 +44,7 @@ class OG_DataTablesView(p.SingletonPlugin):
         self.responsive_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_responsive_default', False))
         self.col_unhide_button_def = toolkit.asbool(
-            config.get(u'ckan.datatables.view_table_colunhide_default', True))
+            config.get(u'ckan.datatables.view_table_columnhide_default', True))
         self.export_button_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_displayexport_default', False))
         self.copy_print_buttons_def = toolkit.asbool(
@@ -135,7 +139,7 @@ class OG_DataTablesView(p.SingletonPlugin):
                 # The only way to fix both problems is writing our own validator, because Null means either the user 
                 # unchecked the checkbox or the view is being created by ckan. If it was the user, it should be false, 
                 # if it was CKAN, it should be the default value by configuration.
-                u'responsive': [default(False), boolean_validator],
+                u'responsive': [configurabledefaults_validator(self.responsive_button_def), boolean_validator],
                 u'col_unhide_button': [configurabledefaults_validator(self.col_unhide_button_def), boolean_validator],
                 u'export_button': [configurabledefaults_validator(self.export_button_def), boolean_validator],
                 u'copy_print_buttons': [configurabledefaults_validator(self.copy_print_buttons_def), boolean_validator],
@@ -157,6 +161,14 @@ class OG_DataTablesView(p.SingletonPlugin):
             'configurabledefaults_validator': configurabledefaults_validator,
         }
 
+    # ITemplateHelpers
+
+    def get_helpers(self):
+        return {
+            'og_datastore_dictionary': og_datastore_dictionary,
+        }
+
+
 def configurabledefaults_validator(default_configurable_value):
     def callable(key, data, errors, context):
         # looking at the "for_view" property we can determine if the view is being created 
@@ -173,3 +185,25 @@ def configurabledefaults_validator(default_configurable_value):
             # so we set the values following the configurable defaults
             data[key] = default_configurable_value
     return callable
+
+
+def og_datastore_dictionary(
+        resource_id: str, include_columns: Optional[list[str]] = None
+) -> list[dict[str, Any]]:
+    """
+    Return the data dictionary info for a resource, optionally filtering
+    columns returned.
+
+    include_columns is a list of column ids to include in the output
+    """
+    try:
+        return [
+            f for f in toolkit.get_action('datastore_search')({}, {
+                'id': resource_id,
+                'limit': 0
+            })['fields']
+            if not f['id'].startswith(u'_') and (
+                include_columns is None or f['id'] in include_columns)
+            ]
+    except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
+        return []

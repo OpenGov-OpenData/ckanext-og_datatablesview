@@ -107,6 +107,16 @@ function copyModal (title) {
   window.getSelection().removeAllRanges()
 }
 
+// force column auto width adjustment to kick in
+// used by "Autofit columns" button
+function fitColText () {
+  const dt = $('#dtprv').DataTable({ retrieve: true })
+  if (gcurrentView === 'list') {
+    dt.responsive.recalc()
+  }
+  dt.columns.adjust().draw(false)
+}
+
 // ensure element id is valid
 function validateId (id) {
   id = id.toLowerCase()
@@ -253,6 +263,41 @@ const esc = function (t) {
     .replace(/"/g, '&quot;')
 }
 
+function responsiveModalSettings (that, packagename, resourcename) {
+  return {
+    details: {
+      display: $.fn.dataTable.Responsive.display.modal({
+        header: function (row) {
+          // add clipboard and print buttons to modal record display
+          var data = row.data();
+          return '<span style="font-size:150%;font-weight:bold;">Details:</span>&nbsp;&nbsp;<div class=" dt-buttons btn-group">' +
+            '<button id="modalcopy-button" class="btn btn-secondary" title="' + that._('Copy to clipboard') + '" onclick="copyModal(\'' +
+            packagename + '&mdash;' + resourcename + '\')"><i class="fa fa-copy"></i></button>' +
+            '<button id="modalprint-button" class="btn btn-secondary" title="' + that._('Print') + '" onclick="printModal(\'' +
+            packagename + '&mdash;' + resourcename + '\')"><i class="fa fa-print"></i></button>' +
+            '</div>&nbsp;'
+        }
+      }),
+      // render the Record Details in a modal dialog box
+      // do not render the _colspacer column, which has the 'none' class
+      // the none class in responsive mode forces the _colspacer column to be hidden
+      // guaranteeing the blue record details button is always displayed, even for narrow tables
+      // also, when a column's content has been truncated with an ellipsis, show the untruncated content
+      renderer: function (api, rowIdx, columns) {
+        const data = $.map(columns, function (col, i) {
+          return col.className !== ' none'
+            ? '<tr class="dt-body-right" data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
+              '<td>' + col.title + ':' + '</td><td>' +
+              (col.data.startsWith('<span class="ellipsis"') ? col.data.substr(30, col.data.indexOf('">') - 30) : col.data) +
+              '</td></tr>'
+            : ''
+        }).join('')
+        return data ? $('<table class="dtr-details" width="100%"/>').append(data) : false
+      }
+    }
+  }
+}
+
 // MAIN
 this.ckan.module('og_datatables_view', function (jQuery) {
   return {
@@ -275,10 +320,12 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       const ajaxurl = dtprv.data('ajaxurl')
       const ckanfilters = dtprv.data('ckanfilters')
       const resourceurl = dtprv.data('resource-url')
-      const colunhidebutton = dtprv.data('col-unhide-button')
+      const responsivemodal = dtprv.data('responsive-modal')
+      const columnhidebutton = dtprv.data('col-unhide-button')
       const copyprintbuttons = dtprv.data('copy-print-buttons')
       const exportbutton = dtprv.data('export-button')
       const colreorder = dtprv.data('col-reorder')
+      const order = dtprv.data('order')
 
       // get view mode setting (table or list/responsive])
       if (responsiveflag) {
@@ -390,46 +437,19 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         fixedColumnSetting = false
         scrollXflag = false
 
-        // create _colspacer column to ensure display of green record detail button
-        dynamicCols.push({
-          data: '',
-          searchable: false,
-          className: 'none',
-          defaultContent: ''
-        })
-
-        // initialize settings for responsive mode (list view)
-        responsiveSettings = {
-          details: {
-            display: $.fn.dataTable.Responsive.display.modal({
-              header: function (row) {
-                // add clipboard and print buttons to modal record display
-                var data = row.data();
-                return '<span style="font-size:150%;font-weight:bold;">Details:</span>&nbsp;&nbsp;<div class=" dt-buttons btn-group">' +
-                  '<button id="modalcopy-button" class="btn btn-default" title="' + that._('Copy to clipboard') + '" onclick="copyModal(\'' +
-                  packagename + '&mdash;' + resourcename + '\')"><i class="fa fa-copy"></i></button>' +
-                  '<button id="modalprint-button" class="btn btn-default" title="' + that._('Print') + '" onclick="printModal(\'' +
-                  packagename + '&mdash;' + resourcename + '\')"><i class="fa fa-print"></i></button>' +
-                  '</div>&nbsp;'
-              }
-            }),
-            // render the Record Details in a modal dialog box
-            // do not render the _colspacer column, which has the 'none' class
-            // the none class in responsive mode forces the _colspacer column to be hidden
-            // guaranteeing the blue record details button is always displayed, even for narrow tables
-            // also, when a column's content has been truncated with an ellipsis, show the untruncated content
-            renderer: function (api, rowIdx, columns) {
-              const data = $.map(columns, function (col, i) {
-                return col.className !== ' none'
-                  ? '<tr class="dt-body-right" data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
-                    '<td>' + col.title + ':' + '</td><td>' +
-                    (col.data.startsWith('<span class="ellipsis"') ? col.data.substr(30, col.data.indexOf('">') - 30) : col.data) +
-                    '</td></tr>'
-                  : ''
-              }).join('')
-              return data ? $('<table class="dtr-details" width="100%"/>').append(data) : false
-            }
-          }
+        if (responsivemodal) {
+          // create _colspacer column to ensure display of green record detail button
+          dynamicCols.push({
+            data: '',
+            searchable: false,
+            className: 'none',
+            defaultContent: ''
+          })
+          responsiveSettings = responsiveModalSettings(that, packagename, resourcename)
+        } else {
+          responsiveSettings = {}
+          $('#_colspacer').remove()
+          $('#_colspacerfilter').remove()
         }
       } else {
         // we're in table view mode
@@ -481,6 +501,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         stateSave: statesaveflag,
         stateDuration: stateduration,
         colReorder: colreorder,
+        order: order,
         fixedColumns: fixedColumnSetting,
         autoWidth: true,
         orderCellsTop: true,
@@ -562,6 +583,8 @@ this.ckan.module('og_datatables_view', function (jQuery) {
             }
           })
           api.draw(false)
+
+          data.order = order
         }, // end stateLoadParams
         stateSaveParams: function (settings, data) {
           // this callback is invoked when saving state info
@@ -691,10 +714,10 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         }, // end InitComplete
         buttons: []
       });
-      if (colunhidebutton == 'True') {
+      if (columnhidebutton == 'True') {
         datatable.button().add(1, {
           extend: 'colvis',
-          text: 'Hide/Unhide Columns',
+          text: '<i class="fa fa-eye-slash"></i> Hide/Unhide Columns',
           titleAttr: that._('Toggle column visibility'),
           className: 'btn-default',
           columns: 'th:gt(0):not(:contains("colspacer"))'
@@ -703,7 +726,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       if (exportbutton == 'True'){
         // Adds download dropdown to buttons menu
         datatable.button().add(2, {
-          text: 'Export',
+          text: '<i class="fa fa-download"></i> Export',
           titleAttr: that._('Filtered download'),
           className: 'btn-default',
           autoClose: true,
@@ -742,7 +765,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       if (copyprintbuttons == 'True') {
         datatable.button().add(3, {
           extend: 'copy',
-          text: 'Copy',
+          text: '<i class="fa fa-copy"></i> Copy',
           titleAttr: that._('Copy to clipboard'),
           className: 'btn-default',
           title: function () {
@@ -757,7 +780,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         })
         datatable.button().add(4, {
           extend: 'print',
-          text: 'Print',
+          text: '<i class="fa fa-print"></i> Print',
           titleAttr: that._('Print'),
           className: 'btn-default',
           title: packagename + ' — ' + resourcename,
@@ -810,9 +833,29 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       })
 
       initFilterObserver()
+
+      // update footer sortinfo when sorting
+      datatable.on('order', function () {
+        const sortOrder = datatable.order()
+        if (!sortOrder.length) {
+          return
+        }
+        gsortInfo = '<b> ' + that._('Sort') + '</b> <i id="sortinfoicon" class="fa fa-info-circle" title="' +
+            that._('Press SHIFT key while clicking on\nsort control for multi-column sort') + '"</i> : '
+        sortOrder.forEach((sortcol, idx) => {
+          const colText = datatable.column(sortcol[0]).name()
+          gsortInfo = gsortInfo + colText +
+                      (sortcol[1] === 'asc'
+                        ? ' <span class="fa fa-sort-amount-asc"></span> '
+                        : ' <span class="fa fa-sort-amount-desc"></span> ')
+        })
+        $('div.sortinfo').html(gsortInfo)
+        //adjust column widths after sorting
+        fitColText();
+      })
     }
   }
-});
+})
 // END MAIN
 
 // register column.name() DataTables API helper so we can refer to columns by name

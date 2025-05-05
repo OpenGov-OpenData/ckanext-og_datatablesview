@@ -11,8 +11,9 @@
 {% set filtered_download_action = h.url_for('ogdatatablesview.filtered_download', resource_view_id=resource_view.id) %}
 
 {#- pass the datadictionary to javascript, so we can init columns there -#}
-{%- set datadictionary = h.datastore_dictionary(resource.id) -%}
+{%- set datadictionary = h.og_datastore_dictionary(resource.id, resource_view.get('show_fields')) -%}
 {%- set nbspval = "&nbsp;"|safe -%}
+
 <script type=text/javascript>
     const gdataDict = {{ datadictionary|tojson }}
     const gresviewId = '{{ resource_view.id }}'
@@ -35,8 +36,8 @@
       data-responsive-flag="{{ resource_view.get('responsive')|lower }}"
       data-page-length-choices="{{ page_length_choices }}"
       data-resource-url="{{ h.url_for('resource.read', id=package.name, resource_id=resource.id ) }}"
-      {% set sort_index = resource_view.get('sort_index') %}
-      {% set sort_order = resource_view.get('sort_order') %}
+      {% set sort_index = resource_view.get('sort_index', 0) %}
+      {% set sort_order = resource_view.get('sort_order', 'asc') %}
       {% if sort_index and sort_order %}
         data-order='[ [ {{ sort_index }}, "{{sort_order}}" ] ]'
       {% endif %}
@@ -81,6 +82,7 @@
   </table>
 
   <form id="filtered-datatables-download" method="POST" action="{{ filtered_download_action }}">
+    {{ h.csrf_input() }}
     <input type="hidden" name="filters" value="{{ request.args.get('filters', '')|e -}}" />
   </form>
 </div>
@@ -100,11 +102,11 @@
   {{- _('Metadata last updated') }}: {{ local_friendly_datetime(res.metadata_modified) }}&#10;
   {{- _('Created') }}: {{ local_friendly_datetime(res.created) }}&#10;
   {{- res.format or res.mimetype_inner or res.mimetype or _('unknown') -}}&nbsp;
-  {%- if res.size|int != 0 -%}
+  {%- if res.size and res.size|int != 0 -%}
    ( {{ h.SI_number_span(res.size)|striptags }} )
   {%- endif -%}
 </div>
-{% endblock %}
+{%- endblock -%}
 
 {%- block styles -%}
   {{- super() -}}
