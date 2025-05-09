@@ -1,108 +1,129 @@
 {% import 'macros/form.html' as form %}
 
-<div class="control-group">
-    <label class="control-label">Table Options</label>
-    <div class="controls">
-        <label class="checkbox" for="field-responsive" title="Optimize table layout for smaller screen sizes">
-            {% if resource_view.id %}
-                <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive }}>
-            {% else %}
-                <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive_button_def }}>
-            {% endif %}
-            Enable responsive display
-        </label>
-    </div>
-    <div class="controls">
-        <label class="checkbox" for="field-col_unhide_button" title="Display the 'Hide/Unhide Columns' button">
-            {% if resource_view.id %}
-                <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button }}>
-            {% else %}
-                <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button_def }}>
-            {% endif %}
-            Display the 'Hide/Unhide Columns' button
-        </label>
-    </div>
-    <div class="controls">
-        <label class="checkbox" for="field-export_button" title="Display Export button">
-            {% if resource_view.id %}
-                <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
-            {% else %}
-                <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button_def }}>
-            {% endif %}
-            Display Export button
-        </label>
-    </div>
-    <div class="controls">
-        <label class="checkbox" for="field-copy_print_buttons" title="Display Copy and Print buttons">
-            {% if resource_view.id %}
-                <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons }}>
-            {% else %}
-                <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons_def }}>
-            {% endif %}
-            Display Copy and Print buttons
-        </label>
-    </div>
-    <div class="controls">
-        <label class="checkbox" for="field-col_reorder" title="Allow users to reorder columns through a drag and drag operation">
-            {% if resource_view.id %}
-                <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder }}>
-            {% else %}
-                <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder_def }}>
-            {% endif %}
-            Allow column reorder
-        </label>
-    </div>
+<div class="form-group">
+  <label class="control-label">Table Options</label>
+  <div class="controls">
+    <label class="checkbox" for="field-responsive" title="Optimize table layout for smaller screen sizes">
+      {% if resource_view.id %}
+        <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive }}>
+      {% else %}
+        <input id="field-responsive" type="checkbox" name="responsive" value="True" {{ "checked " if data.responsive_button_def }}>
+      {% endif %}
+      Enable responsive display
+    </label>
+  </div>
+  <div class="controls">
+    <label class="checkbox" for="field-col_unhide_button" title="Display the 'Hide/Unhide Columns' button">
+      {% if resource_view.id %}
+        <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button }}>
+      {% else %}
+        <input id="field-col_unhide_button" type="checkbox" name="col_unhide_button" value="True" {{ "checked " if data.col_unhide_button_def }}>
+      {% endif %}
+      Display the 'Hide/Unhide Columns' button
+    </label>
+  </div>
+  <div class="controls">
+    <label class="checkbox" for="field-export_button" title="Display Export button">
+      {% if resource_view.id %}
+        <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button }}>
+      {% else %}
+        <input id="field-export_button" type="checkbox" name="export_button" value="True" {{ "checked " if data.export_button_def }}>
+      {% endif %}
+      Display Export button
+    </label>
+  </div>
+  <div class="controls">
+    <label class="checkbox" for="field-copy_print_buttons" title="Display Copy and Print buttons">
+      {% if resource_view.id %}
+        <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons }}>
+      {% else %}
+        <input id="field-copy_print_buttons" type="checkbox" name="copy_print_buttons" value="True" {{ "checked " if data.copy_print_buttons_def }}>
+      {% endif %}
+      Display Copy and Print buttons
+    </label>
+  </div>
+  <div class="controls">
+    <label class="checkbox" for="field-col_reorder" title="Allow users to reorder columns through a drag and drag operation">
+      {% if resource_view.id %}
+        <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder }}>
+      {% else %}
+        <input id="field-col_reorder" type="checkbox" name="col_reorder" value="True" {{ "checked " if data.col_reorder_def }}>
+      {% endif %}
+      Allow column reorder
+    </label>
+  </div>
 </div>
 
 <div class="control-group">
-    <label class="control-label">{{ _('Show Columns') }}</label>
-    <div class="controls">
-        <table class="table table-striped table-bordered">
-            <thead>
-            <tr>
-                <th scope="col">{{ _('Column') }}</th>
-                <th scope="col">{{ _('Label') }}</th>
-            </tr>
-            </thead>
-            {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
-                <tr>
-                    <td>
-                        <label class="checkbox">
-                            <input type="checkbox"
-                                   name="show_fields"
-                                   id="field-show_fields_{{ loop.index }}"
-                                   value="{{ f.id }}"
-                                   {{ 'checked' if 'show_fields' not in data else 'checked' if f.id in data.show_fields else '' }}/>
-                            {{ f.id }}
-                        </label>
-                    </td>
-                    <td>{{ f.get('info', {}).label }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+  <label class="form-label">{{ _('Show Columns') }}</label>
+  <br/>
+  <div class="btn-group flex-wrap" style="float: right; margin-top: -2em;">
+    <button class="dt-show-all btn btn-default btn-sm" type="button" aria-label="Show all fields"><span class="me-3"><i class="fa fa-eye"></i>&nbsp;{{ _('Show All') }}</span></button>
+    <button class="dt-hide-all btn btn-default btn-sm" type="button" aria-label="Hide all fields"><span><i class="fa fa-eye-slash"></i>&nbsp;{{ _('Hide All') }}</span></button>
+  </div>
+  <div class="controls dt-select-columns mt-3">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th scope="col">{{ _('Column') }}</th>
+          <th scope="col">{{ _('Label') }}</th>
+        </tr>
+      </thead>
+        <tr>
+          <td>
+            <label class="checkbox">
+            <input type="checkbox"
+            name="show_fields"
+            id="field-show_fields_1" readonly onclick="return false"
+            value="_id" checked/>_id</label>
+          </td>
+          <td></td>
+        </tr>
+      {% for f in h.datastore_dictionary(resource.id) %}
+        <tr>
+          <td>
+            <label class="checkbox">
+            <input type="checkbox"
+            name="show_fields"
+            id="field-show_fields_{{ loop.index + 1 }}"
+            value="{{ f.id }}"
+            {{ 'checked' if 'show_fields' not in data else
+              'checked' if f.id in data.show_fields else '' }}
+            />{{ f.id }}</label></td>
+          <td>
+            {%- block dict_field_label scoped -%}
+              {{ f.get('info', {}).label }}
+            {%- endblock -%}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
 </div>
 
-<div class="control-group control-select">
-    <label class="control-label" for="field-sort_column">{{ _('Sort By') }}</label>
-    <div class="controls">
-        <select id="field-sort_column" name="sort_column">
-            {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
-            <option value="{{ f.id }}" {% if f.id|string== data.sort_column|string %} selected="selected" {% endif %}>{{
-                f.id }}
-            </option>
-            {% endfor %}
-        </select>
-        <select id="field-sort_order" name="sort_order">
-            {% set order_list = ['asc','desc'] %}
-            {% for order in order_list %}
-            <option value="{{ order }}" {% if order== data.sort_order %} selected="selected" {% endif %}>{{ order }}
-            </option>
-            {% endfor %}
-        </select>
-        <span class="info-block">
+<div class="form-group control-select">
+  <label class="control-label" for="field-sort_column">{{ _('Sort By') }}</label>
+  <div class="controls">
+    <select id="field-sort_column" name="sort_column">
+      {% for f in [{'id': '_id'}] + h.datastore_dictionary(resource.id) %}
+        <option value="{{ f.id }}" {% if f.id|string== data.sort_column|string %} selected="selected" {% endif %}>
+          {{ f.id }}
+        </option>
+      {% endfor %}
+    </select>
+    <select id="field-sort_order" name="sort_order">
+      {% set order_list = ['asc','desc'] %}
+      {% for order in order_list %}
+        <option value="{{ order }}" {% if order== data.sort_order %} selected="selected" {% endif %}>
+          {{ order }}
+        </option>
+      {% endfor %}
+    </select>
+    <span class="info-block">
       <i class="fa fa-info-circle"></i>
       Sorting will only apply if sort column is visible (i.e. selected in the Show Columns table)
     </span>
-    </div>
+  </div>
 </div>
+
+{% asset 'ckanext-og_datatablesview/form-js' %}
