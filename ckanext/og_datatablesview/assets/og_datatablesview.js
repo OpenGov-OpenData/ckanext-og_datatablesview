@@ -642,7 +642,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
 
           // add resourceinfo in footer, very useful if this view is embedded
           const resourceInfo = document.getElementById('dtv-resource-info').innerText
-          $('div.resourceinfo').html('<a href="' + resourceurl + '">' +
+          $('div.resourceinfo').html('<a href="' + resourceurl + '" target="_blank">' +
             packagename + '&mdash;' + resourcename +
             '</a> <i class="fa fa-info-circle" title="' + resourceInfo + '"</i>')
 
