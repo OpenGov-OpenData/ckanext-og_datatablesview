@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 from urllib.parse import urlencode
+from html import escape
 
 from flask import Blueprint
 
@@ -121,8 +122,10 @@ def ajax(resource_view_id):
         dtdata = {u'error': query_error}
     else:
         data = []
+        null_label = h.og_datatablesview_null_label()
         for row in response[u'records']:
-            record = {colname: str(row.get(colname, u''))
+            record = {colname: escape(str(null_label if row.get(colname, u'')
+                                          is None else row.get(colname, u'')))
                       for colname in cols}
             # the DT_RowId is used in DT to set an element id for each record
             record['DT_RowId'] = 'row' + str(row.get(u'_id', u''))
