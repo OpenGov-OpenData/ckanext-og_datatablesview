@@ -3,9 +3,7 @@
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.navl.dictization_functions as df
-from typing import (
-    Any, Optional
-)
+import ckanext.og_datatablesview.helpers as helpers
 from ckanext.og_datatablesview import blueprint
 
 missing = df.missing
@@ -15,7 +13,7 @@ boolean_validator = toolkit.get_validator(u'boolean_validator')
 natural_number_validator = toolkit.get_validator(u'natural_number_validator')
 ignore_missing = toolkit.get_validator(u'ignore_missing')
 
-DEFAULT_PAGE_LENGTH_CHOICES = '10 25 50 100'
+DEFAULT_PAGE_LENGTH_CHOICES = '25 50 100 500'
 
 
 class OG_DataTablesView(p.SingletonPlugin):
@@ -165,7 +163,8 @@ class OG_DataTablesView(p.SingletonPlugin):
 
     def get_helpers(self):
         return {
-            'og_datastore_dictionary': og_datastore_dictionary,
+            'og_datatablesview_null_label': helpers.og_datatablesview_null_label,
+            'og_datastore_dictionary': helpers.og_datastore_dictionary,
         }
 
 
@@ -185,25 +184,3 @@ def configurabledefaults_validator(default_configurable_value):
             # so we set the values following the configurable defaults
             data[key] = default_configurable_value
     return callable
-
-
-def og_datastore_dictionary(
-        resource_id: str, include_columns: Optional[list[str]] = None
-) -> list[dict[str, Any]]:
-    """
-    Return the data dictionary info for a resource, optionally filtering
-    columns returned.
-
-    include_columns is a list of column ids to include in the output
-    """
-    try:
-        return [
-            f for f in toolkit.get_action('datastore_search')({}, {
-                'id': resource_id,
-                'limit': 0
-            })['fields']
-            if not f['id'].startswith(u'_') and (
-                include_columns is None or f['id'] in include_columns)
-            ]
-    except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
-        return []
