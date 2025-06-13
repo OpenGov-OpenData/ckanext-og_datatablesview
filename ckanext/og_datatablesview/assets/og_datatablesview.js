@@ -345,7 +345,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       }]
 
       gdataDict.forEach((colDefn, idx) => {
-        const colDict = { name: colDefn.id, data: colDefn.id, contentPadding: 'MM' }
+        const colDict = { name: colDefn['id'], data: colDefn['id'].replace('.', ''), contentPadding: 'MM' }
         switch (colDefn.type) {
           case 'numeric':
             colDict.type = 'num'
