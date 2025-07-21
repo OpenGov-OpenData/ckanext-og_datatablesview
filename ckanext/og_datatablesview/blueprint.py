@@ -65,6 +65,8 @@ def ajax(resource_view_id):
 
     cols = [f[u'id'] for f in unfiltered_response[u'fields']]
     if u'show_fields' in resource_view:
+        if '_id' not in resource_view[u'show_fields']:
+            resource_view[u'show_fields'].insert(0, '_id')
         cols = [c for c in cols if c in resource_view[u'show_fields']]
 
     sort_list = []

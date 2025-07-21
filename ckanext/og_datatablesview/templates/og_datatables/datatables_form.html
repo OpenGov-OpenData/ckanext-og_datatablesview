@@ -74,8 +74,11 @@
             <label class="checkbox">
             <input type="checkbox"
             name="show_fields"
-            id="field-show_fields_1" readonly onclick="return false"
-            value="_id" checked/>_id</label>
+            id="field-show_fields_1"
+            value="_id"
+            {{ 'checked' if 'show_fields' not in data else
+            'checked' if '_id' in data.show_fields else '' }}
+            />_id</label>
           </td>
           <td></td>
         </tr>

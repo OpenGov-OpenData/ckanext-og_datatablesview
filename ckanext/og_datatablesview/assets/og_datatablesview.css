@@ -25,12 +25,6 @@ div.dataTables_scroll{
   width: 100% !important;
 }
 
-div.dataTables_scrollHeadInner table.table-bordered tr th:first-child {
-  left: 0;
-  position: sticky;
-  background: #ffffff;
-}
-
 /* processing message should hover over table and be visible */
 #dtprv_processing {
   z-index: 100;

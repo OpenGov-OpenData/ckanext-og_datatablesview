@@ -326,6 +326,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       const exportbutton = dtprv.data('export-button')
       const colreorder = dtprv.data('col-reorder')
       const order = dtprv.data('order')
+      const showid = (dtprv.data('show-id') ?? 'False').toString().toLowerCase() === 'true';
 
       // get view mode setting (table or list/responsive])
       if (responsiveflag) {
@@ -341,7 +342,8 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         searchable: false,
         type: 'num',
         className: 'dt-body-right',
-        width: gcurrentView === 'table' ? '28px' : '50px'
+        width: gcurrentView === 'table' ? '28px' : '50px',
+        visible: showid,
       }]
 
       gdataDict.forEach((colDefn, idx) => {
@@ -427,7 +429,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
       }
 
       // settings if gcurrentView === table
-      let fixedColumnSetting = true
+      let fixedColumnSetting = false
       let scrollXflag = true
       let responsiveSettings = false
 
@@ -831,6 +833,9 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         // and we need to ensure Filter Observer is in place
         setTimeout(initFilterObserver(), 100)
       })
+
+      // set _id visiblilty regardless of saved state
+      datatable.column(0).visible(showid)
 
       initFilterObserver()
 
