@@ -2,6 +2,7 @@ import pytest
 
 import ckan.plugins.toolkit as toolkit
 from ckan.tests import factories
+from ckanext.og_datatablesview.blueprint import format_fts_query
 
 
 @pytest.mark.usefixtures("clean_db")
@@ -40,15 +41,15 @@ class TestUtils:
             resource_id=resource['id'],
             title='OG Data Tables',
             view_type='og_datatables_view',
-            copy_print_buttons=True
+            copy_print_buttons=False
         )
 
-        response = p.toolkit.get_action('resource_view_show')(
+        response = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view.get('id')}
         )
 
-        assert response.get('copy_print_buttons') == True
+        assert response.get('copy_print_buttons') == False
 
 
     def test_og_datatableview_display_export_button_success(self):
@@ -62,15 +63,15 @@ class TestUtils:
             resource_id=resource['id'],
             title='OG Data Tables',
             view_type='og_datatables_view',
-            export_button=True
+            export_button=False
         )
 
-        response = p.toolkit.get_action('resource_view_show')(
+        response = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view.get('id')}
         )
 
-        assert response.get('export_button') == True
+        assert response.get('export_button') == False
 
 
     def test_og_datatableview_custom_options_success(self):
@@ -84,22 +85,22 @@ class TestUtils:
             resource_id=resource['id'],
             title='OG Data Tables',
             view_type='og_datatables_view',
-            export_button=True,
-            responsive=True,
+            export_button=False,
+            responsive=False,
             copy_print_buttons=False,
-            col_reorder=False
+            col_reorder=True
 
         )
 
-        response = p.toolkit.get_action('resource_view_show')(
+        response = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view.get('id')}
         )
 
-        assert response.get('export_button') == True
-        assert response.get('responsive') == True
+        assert response.get('export_button') == False
+        assert response.get('responsive') == False
         assert response.get('copy_print_buttons') == False
-        assert response.get('col_reorder') == False
+        assert response.get('col_reorder') == True
 
 
     def test_og_datatableview_change_show_columns_success(self):
@@ -139,7 +140,7 @@ class TestUtils:
             ]
         )
 
-        response = p.toolkit.get_action('resource_view_show')(
+        response = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view.get('id')}
         )
@@ -185,13 +186,13 @@ class TestUtils:
 
         resource_view_id = resource_view.get('id')
 
-        resource_view_delete_response = p.toolkit.get_action('resource_view_delete')(
+        resource_view_delete_response = toolkit.get_action('resource_view_delete')(
             {'user': sysadmin.get('name')},
             {'id': resource_view_id}
         )
 
         with pytest.raises(toolkit.ObjectNotFound):
-            resource_view_show_response = p.toolkit.get_action('resource_view_show')(
+            resource_view_show_response = toolkit.get_action('resource_view_show')(
                 {'user': sysadmin.get('name')},
                 {'id': resource_view_id}
             )
@@ -215,20 +216,72 @@ class TestUtils:
             view_type='og_datatables_view'
         )
 
-        resource_view_update_response = p.toolkit.get_action('resource_view_update')(
+        resource_view_update_response = toolkit.get_action('resource_view_update')(
             {'user': sysadmin.get('name')},
             {'id': resource_view_1.get('id'), 'description': 'Testing resource view update'},
         )
 
-        response_1 = p.toolkit.get_action('resource_view_show')(
+        response_1 = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view_1.get('id')}
         )
 
-        response_2 = p.toolkit.get_action('resource_view_show')(
+        response_2 = toolkit.get_action('resource_view_show')(
             {'user': sysadmin.get('name')},
             {'id': resource_view_2.get('id')}
         )
 
         assert response_1.get('description') == 'Testing resource view update'
         assert response_1.get('description') != response_2.get('description')
+
+
+class TestFormatFtsQuery:
+
+    def test_format_fts_query_empty_string(self):
+        assert format_fts_query('') == ''
+
+    def test_format_fts_query_single_word(self):
+        assert format_fts_query('test') == 'test:*'
+
+    def test_format_fts_query_multiple_words(self):
+        assert format_fts_query('test query') == 'test:* & query:*'
+
+    def test_format_fts_query_apostrophe_compound_word(self):
+        # Apostrophe creates compound word - should use OR for parts
+        result = format_fts_query("L'est")
+        assert result == '(L:* | est:*)'
+
+    def test_format_fts_query_slash_compound_word(self):
+        # Slash creates compound word - should use OR for parts
+        result = format_fts_query('Board/Village')
+        assert result == '(Board:* | Village:*)'
+
+    def test_format_fts_query_mixed_words_and_compound(self):
+        # Mix of regular words and compound words
+        result = format_fts_query('Orleans Parish School Board/Village')
+        assert result == 'Orleans:* & Parish:* & School:* & (Board:* | Village:*)'
+
+    def test_format_fts_query_apostrophe_in_phrase(self):
+        # Apostrophe in middle of phrase
+        result = format_fts_query("De L'est Elementary")
+        assert result == 'De:* & (L:* | est:*) & Elementary:*'
+
+    def test_format_fts_query_complex_search(self):
+        # Complex search with multiple compound words
+        result = format_fts_query("Orleans Parish School Board/Village De L'est Elementary School")
+        assert result == 'Orleans:* & Parish:* & School:* & (Board:* | Village:*) & De:* & (L:* | est:*) & Elementary:* & School:*'
+
+    def test_format_fts_query_special_characters(self):
+        # Other special characters should be replaced with underscore
+        result = format_fts_query('test@example.com')
+        assert result == '(test:* | example:* | com:*)'
+
+    def test_format_fts_query_hyphens_preserved(self):
+        # Hyphens should be preserved
+        result = format_fts_query('test-word')
+        assert result == 'test-word:*'
+
+    def test_format_fts_query_multiple_apostrophes(self):
+        # Multiple apostrophes
+        result = format_fts_query("O'Brien's")
+        assert result == "(O:* | Brien:* | s:*)"

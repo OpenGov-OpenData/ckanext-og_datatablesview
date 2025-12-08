@@ -13,6 +13,37 @@ import re
 ogdatatablesview = Blueprint(u'ogdatatablesview', __name__)
 
 
+def format_fts_query(search_value):
+    u'''
+    Format search value for FTS query with prefix matching.
+    Handles compound words (with slashes/apostrophes) by using OR for parts.
+    '''
+    if not search_value:
+        return u''
+    space_separated = search_value.split()
+    processed_terms = []
+    for word in space_separated:
+        if word:
+            # replace non-alphanumeric characters with FTS wildcard (_)
+            processed = re.sub(r'[^0-9a-zA-Z\-]+', '_', word)
+            if processed:
+                if '_' in processed:
+                    # Compound word: use OR for parts
+                    parts = [p for p in processed.split('_') if p]
+                    if len(parts) > 1:
+                        processed_terms.append(u'(' + u' | '.join([p + u':*' for p in parts]) + u')')
+                    else:
+                        processed_terms.append(parts[0] + u':*')
+                else:
+                    # append ':*' so we can do partial FTS searches
+                    processed_terms.append(processed + u':*')
+    if not processed_terms:
+        return u''
+    if len(processed_terms) > 1:
+        return u' & '.join(processed_terms)
+    return processed_terms[0]
+
+
 def merge_filters(view_filters, user_filters_str):
     u'''
     view filters are built as part of the view, user filters
@@ -94,17 +125,13 @@ def ajax(resource_view_id):
         v = str(request.form[u'columns[%d][search][value]' % i])
         if v:
             k = str(request.form[u'columns[%d][name]' % i])
-            # replace non-alphanumeric characters with FTS wildcard (_)
-            v = re.sub(r'[^0-9a-zA-Z\-]+', '_', v)
-            # append ':*' so we can do partial FTS searches
-            colsearch_dict[k] = v + u':*'
+            colsearch_dict[k] = format_fts_query(v)
         i += 1
 
     if colsearch_dict:
         search_text = json.dumps(colsearch_dict)
     else:
-        search_text = re.sub(r'[^0-9a-zA-Z\-]+', '_',
-                             search_text) + u':*' if search_text else u''
+        search_text = format_fts_query(search_text) if search_text else u''
 
     try:
         response = datastore_search(
@@ -185,16 +212,12 @@ def filtered_download(resource_view_id):
             v = column[u'search'][u'value']
             if v:
                 k = column[u'name']
-                # replace non-alphanumeric characters with FTS wildcard (_)
-                v = re.sub(r'[^0-9a-zA-Z\-]+', '_', v)
-                # append ':*' so we can do partial FTS searches
-                colsearch_dict[k] = v + u':*'
+                colsearch_dict[k] = format_fts_query(v)
 
     if colsearch_dict:
         search_text = json.dumps(colsearch_dict)
     else:
-        search_text = re.sub(r'[^0-9a-zA-Z\-]+', '_',
-                             search_text) + u':*' if search_text else ''
+        search_text = format_fts_query(search_text) if search_text else ''
 
     return h.redirect_to(
         h.url_for(
