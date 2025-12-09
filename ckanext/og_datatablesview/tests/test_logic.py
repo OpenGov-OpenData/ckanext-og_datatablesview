@@ -285,3 +285,38 @@ class TestFormatFtsQuery:
         # Multiple apostrophes
         result = format_fts_query("O'Brien's")
         assert result == "(O:* | Brien:* | s:*)"
+
+    def test_format_fts_query_date_single_digit_month_day(self):
+        # Date with single digit month and day
+        result = format_fts_query('1/3/2025')
+        assert result == '1/3/2025:*'
+
+    def test_format_fts_query_date_two_digit_month_day(self):
+        # Date with two digit month and day
+        result = format_fts_query('1/13/2025')
+        assert result == '1/13/2025:*'
+
+    def test_format_fts_query_date_two_digit_year(self):
+        # Date with two digit year
+        result = format_fts_query('1/13/25')
+        assert result == '1/13/25:*'
+
+    def test_format_fts_query_date_with_dash(self):
+        # Date with dashes instead of slashes
+        result = format_fts_query('1-13-2025')
+        assert result == '1-13-2025:*'
+
+    def test_format_fts_query_date_in_phrase(self):
+        # Date within a phrase
+        result = format_fts_query('Contract Begin Date 1/13/2025')
+        assert result == 'Contract:* & Begin:* & Date:* & 1/13/2025:*'
+
+    def test_format_fts_query_multiple_dates(self):
+        # Multiple dates in search
+        result = format_fts_query('1/13/2025 6/30/2025')
+        assert result == '1/13/2025:* & 6/30/2025:*'
+
+    def test_format_fts_query_date_with_compound_word(self):
+        # Date with compound word in same search
+        result = format_fts_query('Board/Village 1/13/2025')
+        assert result == '(Board:* | Village:*) & 1/13/2025:*'

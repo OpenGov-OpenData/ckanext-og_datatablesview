@@ -24,6 +24,10 @@ def format_fts_query(search_value):
     processed_terms = []
     for word in space_separated:
         if word:
+            is_date = re.match(r'^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$', word)
+            if is_date:
+                processed_terms.append(word + u':*')
+                continue
             # replace non-alphanumeric characters with FTS wildcard (_)
             processed = re.sub(r'[^0-9a-zA-Z\-]+', '_', word)
             if processed:
