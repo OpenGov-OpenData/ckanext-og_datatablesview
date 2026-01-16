@@ -467,8 +467,10 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         const colid = 'dtcol-' + validateId(colname) + '-' + i
         const coltype = $(thecol).data('type')
         const placeholderText = formatdateflag && coltype.substr(0, 9) === 'timestamp' ? ' placeholder="yyyy-mm-dd"' : ''
+        const ariaLabelAttr = colname ? ' aria-label="' + that._('Search') + ' ' + colname + '"' : ''
         $('<input id="' + colid + '" name="' + colid + '" autosave="' + colid + '"' +
                 placeholderText +
+                ariaLabelAttr +
                 ' class="fhead form-control input-sm" type="search" results="10" autocomplete="on" style="width:100%"/>')
           .appendTo($(thecol).empty())
           .on('keyup search', function (event) {
@@ -716,6 +718,21 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         }, // end InitComplete
         buttons: []
       });
+
+      // Add aria-labels to keyboard navigation inputs created by Keys extension
+      // Uses MutationObserver to handle dynamically created inputs
+      const tableBody = document.querySelector('#dtprv tbody')
+      if (tableBody) {
+        const observer = new MutationObserver(function() {
+          $('#dtprv tbody input[type="text"][tabindex="0"]').each(function() {
+            if (!$(this).attr('aria-label')) {
+              $(this).attr('aria-label', that._('Cell navigation'))
+            }
+          })
+        })
+        observer.observe(tableBody, { childList: true, subtree: true })
+      }
+
       if (columnhidebutton == 'True') {
         datatable.button().add(1, {
           extend: 'colvis',
@@ -846,7 +863,7 @@ this.ckan.module('og_datatables_view', function (jQuery) {
           return
         }
         gsortInfo = '<b> ' + that._('Sort') + '</b> <i id="sortinfoicon" class="fa fa-info-circle" title="' +
-            that._('Press SHIFT key while clicking on\nsort control for multi-column sort') + '"</i> : '
+            that._('Press SHIFT key while clicking on\nsort control for multi-column sort') + '"></i> : '
         sortOrder.forEach((sortcol, idx) => {
           const colText = datatable.column(sortcol[0]).name()
           gsortInfo = gsortInfo + colText +
