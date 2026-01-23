@@ -671,6 +671,24 @@ this.ckan.module('og_datatables_view', function (jQuery) {
             }
           })
 
+          // add title and aria-hidden to ScrollResize iframe for accessibility
+          // the iframe is created by the ScrollResize plugin and can be identified by src="about:blank"
+          const addResizeIframeAttributes = function () {
+            const iframe = $('#resize_wrapper iframe[src="about:blank"][data="about:blank"]')
+            if (iframe.length) {
+              iframe.attr('title', 'resize wrapper')
+              iframe.attr('aria-hidden', 'true')
+            }
+          }
+          addResizeIframeAttributes()
+          const iframeObserver = new MutationObserver(function () {
+            addResizeIframeAttributes()
+          })
+          iframeObserver.observe(document.getElementById('resize_wrapper'), {
+            childList: true,
+            subtree: true
+          })
+
           // start showing page once everything is just about rendered
           // we need to make it visible now so smartsize works if needed
           document.getElementsByClassName('dt-view')[0].style.visibility = 'visible'
