@@ -1,0 +1,25 @@
+main-css:
+  output: ckanext-og_datatables_datefilterview/%(version)s_og_datatables_datefilterview.css
+  contents:
+    - vendor/DataTables/datatables.css
+    - vendor/DataTables/datatables.mark.css
+    - og_datatables_datefilterview.css
+main-js:
+  output: ckanext-og_datatables_datefilterview/%(version)s_og_datatables_datefilterview.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - vendor/DataTables/datatables.js
+    - vendor/DataTables/datatables.mark.js
+    - vendor/DataTables/jquery.mark.js
+    - vendor/DataTables/dataTables.scrollResize.js
+    - vendor/DataTables/datetime.js
+    - og_datatables_datefilterview.js
+form-js:
+  output: ckanext-og_datatables_datefilterview/%(version)s_og_datatables_datefilterview_form.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - og_datatables_datefilterview_form.js

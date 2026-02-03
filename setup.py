@@ -82,6 +82,7 @@ setup(
     entry_points='''
         [ckan.plugins]
         og_datatables_view=ckanext.og_datatablesview.plugin:OG_DataTablesView
+        og_datatables_datefilter_view=ckanext.og_datatables_datefilterview.plugin:OG_DataTablesDateFilterView
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
