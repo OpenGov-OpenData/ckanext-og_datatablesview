@@ -12,7 +12,6 @@
 
 {#- pass the datadictionary to javascript, so we can init columns there -#}
 {%- set datadictionary = h.og_datastore_dictionary(resource.id, resource_view.get('show_fields')) -%}
-{%- set nbspval = "&nbsp;"|safe -%}
 
 <script type=text/javascript>
     const gdataDict = {{ datadictionary|tojson }}
@@ -53,15 +52,15 @@
           {% if 'show_fields' not in resource_view or field.id in resource_view.show_fields -%}
             <th scope="col">
             {%- if data_dictionary_labels and field.info is defined and field.info.label|length -%}
-              {{ field.info.label|replace(" ", nbspval) }}
+              {{ field.info.label + " " }}
             {%- else -%}
-              {{ field.id|replace(" ", nbspval) }}
+              {{ field.id + " " }}
             {%- endif -%}
-            &nbsp;
             {%- if data_dictionary_labels and field.info is defined and (field.info.label|length or field.info.notes|length)-%}
               <i class="fa fa-info-circle" title="{{field.id}} ({{field.type}})&#10;{{ h.markdown_extract(field.info.notes, 300) }}"></i>
+              &nbsp;
             {%- endif -%}
-            &nbsp;</th>
+            </th>
           {%- endif %}
         {% endfor -%}
         <th id="_colspacer">colspacer</th>
