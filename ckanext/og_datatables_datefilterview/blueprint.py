@@ -50,14 +50,16 @@ def is_date_range_filter(value):
     - "2024-01-01 to 2024-12-31"
     - "2024-01-01,2024-12-31"
     - "2024-01-01 - 2024-12-31"
-    
+    - "01/15/2024 to 12/31/2024"
+
+    Dates are normalized to YYYY-MM-DD format for SQL queries.
     Returns tuple (is_date_range, start_date, end_date) or (False, None, None)
     '''
     if not value:
         return (False, None, None)
-    
+
     value = value.strip()
-    
+
     # Try "to" separator
     if u' to ' in value.lower():
         parts = re.split(r'\s+to\s+', value, flags=re.IGNORECASE)
@@ -65,8 +67,9 @@ def is_date_range_filter(value):
             start_date = parts[0].strip()
             end_date = parts[1].strip()
             if _is_valid_date(start_date) and _is_valid_date(end_date):
-                return (True, start_date, end_date)
-    
+                # Normalize dates to YYYY-MM-DD format
+                return (True, _normalize_date(start_date), _normalize_date(end_date))
+
     # Try comma separator
     if u',' in value:
         parts = value.split(u',')
@@ -74,8 +77,9 @@ def is_date_range_filter(value):
             start_date = parts[0].strip()
             end_date = parts[1].strip()
             if _is_valid_date(start_date) and _is_valid_date(end_date):
-                return (True, start_date, end_date)
-    
+                # Normalize dates to YYYY-MM-DD format
+                return (True, _normalize_date(start_date), _normalize_date(end_date))
+
     # Try dash separator (with spaces)
     if u' - ' in value:
         parts = value.split(u' - ')
@@ -83,20 +87,56 @@ def is_date_range_filter(value):
             start_date = parts[0].strip()
             end_date = parts[1].strip()
             if _is_valid_date(start_date) and _is_valid_date(end_date):
-                return (True, start_date, end_date)
-    
+                # Normalize dates to YYYY-MM-DD format
+                return (True, _normalize_date(start_date), _normalize_date(end_date))
+
     return (False, None, None)
 
 
 def _is_valid_date(date_str):
     u'''
-    Check if a string is a valid date in YYYY-MM-DD format.
+    Check if a string is a valid date in YYYY-MM-DD or MM/DD/YYYY format.
+    Returns True if valid, False otherwise.
     '''
+    # Try YYYY-MM-DD format
     try:
         datetime.strptime(date_str, u'%Y-%m-%d')
         return True
     except ValueError:
-        return False
+        pass
+
+    # Try MM/DD/YYYY format
+    try:
+        datetime.strptime(date_str, u'%m/%d/%Y')
+        return True
+    except ValueError:
+        pass
+
+    return False
+
+
+def _normalize_date(date_str):
+    u'''
+    Convert a date string to YYYY-MM-DD format.
+    Accepts both YYYY-MM-DD and MM/DD/YYYY formats.
+    Returns the normalized date string in YYYY-MM-DD format.
+    '''
+    # Try YYYY-MM-DD format first (already normalized)
+    try:
+        parsed_date = datetime.strptime(date_str, u'%Y-%m-%d')
+        return date_str
+    except ValueError:
+        pass
+
+    # Try MM/DD/YYYY format and convert to YYYY-MM-DD
+    try:
+        parsed_date = datetime.strptime(date_str, u'%m/%d/%Y')
+        return parsed_date.strftime(u'%Y-%m-%d')
+    except ValueError:
+        pass
+
+    # If neither format works, return the original string
+    return date_str
 
 
 def is_date_column(column_name, fields):
@@ -303,6 +343,19 @@ def ajax(resource_view_id):
                         else:
                             del filters[filter_key]
                         break
+                    elif is_date_column(filter_key, unfiltered_response[u'fields']) and _is_valid_date(str(filter_value).strip()):
+                        # Single date search in timestamp column - treat as date range for same day
+                        normalized_date = _normalize_date(str(filter_value).strip())
+                        date_range_filter = (normalized_date, normalized_date)
+                        date_range_column = filter_key
+                        # Remove from regular filters (it will be handled by SQL query)
+                        if isinstance(filters[filter_key], list):
+                            filters[filter_key] = [v for v in filters[filter_key] if v != filter_value]
+                            if not filters[filter_key]:
+                                del filters[filter_key]
+                        else:
+                            del filters[filter_key]
+                        break
             if date_range_filter:
                 break
     
@@ -319,6 +372,11 @@ def ajax(resource_view_id):
                 if is_date_range and is_date_column(k, unfiltered_response[u'fields']):
                     # Store date range filter info
                     date_range_filter = (start_date, end_date)
+                    date_range_column = k
+                elif is_date_column(k, unfiltered_response[u'fields']) and _is_valid_date(v.strip()):
+                    # Single date search in timestamp column - treat as date range for same day
+                    normalized_date = _normalize_date(v.strip())
+                    date_range_filter = (normalized_date, normalized_date)
                     date_range_column = k
                 else:
                     # replace non-alphanumeric characters with FTS wildcard (_)
@@ -451,39 +509,73 @@ def filtered_download(resource_view_id):
 
     colsearch_dict = {}
     columns = params[u'columns']
+    date_range_filter = None
+    date_range_column = None
+
     for column in columns:
         if column[u'search'][u'value']:
             v = column[u'search'][u'value']
             if v:
                 k = column[u'name']
-                # replace non-alphanumeric characters with FTS wildcard (_)
-                v = re.sub(r'[^0-9a-zA-Z\-]+', '_', v)
-                # append ':*' so we can do partial FTS searches
-                colsearch_dict[k] = v + u':*'
-
-    # Check for date range filters
-    date_range_filter = None
-    date_range_column = None
-    filters_for_query = {}
-    
-    for filter_key, filter_values in filters.items():
-        if filter_values:
-            # Handle both single value and list of values
-            values_to_check = filter_values if isinstance(filter_values, list) else [filter_values]
-            has_date_range = False
-            for filter_value in values_to_check:
-                if filter_value:
-                    # Check if this is a date range filter
-                    is_date_range, start_date, end_date = is_date_range_filter(str(filter_value))
-                    if is_date_range and is_date_column(filter_key, unfiltered_response[u'fields']):
+                # Check if this is a date filter in a timestamp column
+                if not date_range_filter:
+                    is_date_range, start_date, end_date = is_date_range_filter(v)
+                    if is_date_range and is_date_column(k, unfiltered_response[u'fields']):
                         # Store date range filter info
                         date_range_filter = (start_date, end_date)
-                        date_range_column = filter_key
-                        has_date_range = True
-                        break
-            
-            # Add to filters_for_query if not a date range
-            if not has_date_range:
+                        date_range_column = k
+                    elif is_date_column(k, unfiltered_response[u'fields']) and _is_valid_date(v.strip()):
+                        # Single date search in timestamp column - treat as date range for same day
+                        normalized_date = _normalize_date(v.strip())
+                        date_range_filter = (normalized_date, normalized_date)
+                        date_range_column = k
+                    else:
+                        # replace non-alphanumeric characters with FTS wildcard (_)
+                        v = re.sub(r'[^0-9a-zA-Z\-]+', '_', v)
+                        # append ':*' so we can do partial FTS searches
+                        colsearch_dict[k] = v + u':*'
+                else:
+                    # Date range already found, skip date columns
+                    if not (is_date_column(k, unfiltered_response[u'fields'])):
+                        # replace non-alphanumeric characters with FTS wildcard (_)
+                        v = re.sub(r'[^0-9a-zA-Z\-]+', '_', v)
+                        # append ':*' so we can do partial FTS searches
+                        colsearch_dict[k] = v + u':*'
+
+    # Check for date range filters from URL parameters (only if not already found from column search)
+    filters_for_query = {}
+
+    if not date_range_filter:
+        for filter_key, filter_values in filters.items():
+            if filter_values:
+                # Handle both single value and list of values
+                values_to_check = filter_values if isinstance(filter_values, list) else [filter_values]
+                has_date_range = False
+                for filter_value in values_to_check:
+                    if filter_value:
+                        # Check if this is a date range filter
+                        is_date_range, start_date, end_date = is_date_range_filter(str(filter_value))
+                        if is_date_range and is_date_column(filter_key, unfiltered_response[u'fields']):
+                            # Store date range filter info
+                            date_range_filter = (start_date, end_date)
+                            date_range_column = filter_key
+                            has_date_range = True
+                            break
+                        elif is_date_column(filter_key, unfiltered_response[u'fields']) and _is_valid_date(str(filter_value).strip()):
+                            # Single date search in timestamp column - treat as date range for same day
+                            normalized_date = _normalize_date(str(filter_value).strip())
+                            date_range_filter = (normalized_date, normalized_date)
+                            date_range_column = filter_key
+                            has_date_range = True
+                            break
+
+                # Add to filters_for_query if not a date range
+                if not has_date_range:
+                    filters_for_query[filter_key] = filter_values
+    else:
+        # Date range already found from column search, just copy non-date filters
+        for filter_key, filter_values in filters.items():
+            if not is_date_column(filter_key, unfiltered_response[u'fields']):
                 filters_for_query[filter_key] = filter_values
     
     # If we have a date range filter, use SQL query for export

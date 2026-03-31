@@ -466,7 +466,15 @@ this.ckan.module('og_datatables_datefilter_view', function (jQuery) {
         const colname = thecol.textContent
         const colid = 'dtcol-' + validateId(colname) + '-' + i
         const coltype = $(thecol).data('type')
-        const placeholderText = formatdateflag && coltype.substr(0, 9) === 'timestamp' ? ' placeholder="yyyy-mm-dd"' : ''
+        let placeholderText = ''
+        if (formatdateflag && coltype.substr(0, 9) === 'timestamp') {
+          // Set placeholder based on configured date format
+          if (dateformat.toUpperCase() === 'MM/DD/YYYY') {
+            placeholderText = ' placeholder="mm/dd/yyyy"'
+          } else {
+            placeholderText = ' placeholder="yyyy-mm-dd"'
+          }
+        }
         const ariaLabelAttr = colname ? ' aria-label="' + that._('Search') + ' ' + colname + '"' : ''
         $('<input id="' + colid + '" name="' + colid + '" autosave="' + colid + '"' +
                 placeholderText +
