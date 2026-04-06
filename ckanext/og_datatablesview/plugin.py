@@ -184,7 +184,8 @@ def configurabledefaults_validator(default_configurable_value):
                 # the browser POSTs a null value, so we set it to False
                 data[key] = False
         else:
-            # the view is being created by the default view mechanism, 
-            # so we set the values following the configurable defaults
-            data[key] = default_configurable_value
+            # the view is being created by the default view mechanism or via API/tests
+            # If a value is explicitly provided, use it; otherwise use the configurable default
+            if data.get(key) is missing or data.get(key) is None:
+                data[key] = default_configurable_value
     return callable
