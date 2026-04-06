@@ -1,6 +1,8 @@
 # encoding: utf-8
 import pytest
 
+import ckan.plugins.toolkit as toolkit
+from ckan.tests import factories
 from ckanext.og_datatables_datefilterview.blueprint import (
     _is_valid_date,
     _normalize_date,
@@ -209,3 +211,155 @@ class TestDateFormatIntegration:
         assert _is_valid_date(date_str) == True
         normalized = _normalize_date(date_str)
         assert normalized == '2024-01-15'
+
+
+@pytest.mark.usefixtures("clean_db")
+class TestResourceViewConfiguration:
+    """Tests for resource view configuration options"""
+
+    def test_og_datatables_datefilterview_on_resource_page_success(self):
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view'
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('title') == 'OG Data Tables with Date Filter'
+        assert response.get('view_type') == 'og_datatables_datefilter_view'
+
+
+    def test_og_datatables_datefilterview_hide_resource_info_true_success(self):
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view',
+            hide_resource_info=True
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('hide_resource_info') == True
+
+
+    def test_og_datatables_datefilterview_hide_resource_info_false_success(self):
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view',
+            hide_resource_info=False
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('hide_resource_info') == False
+
+
+    def test_og_datatables_datefilterview_hide_resource_info_default_false_success(self):
+        """Test that hide_resource_info defaults to False when not specified"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view'
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('hide_resource_info') == False
+
+
+    def test_og_datatables_datefilterview_hide_resource_info_with_other_options_success(self):
+        """Test hide_resource_info works correctly with other configuration options"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view',
+            hide_resource_info=True,
+            export_button=False,
+            responsive=True,
+            copy_print_buttons=False,
+            col_reorder=True
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('hide_resource_info') == True
+        assert response.get('export_button') == False
+        assert response.get('responsive') == True
+        assert response.get('copy_print_buttons') == False
+        assert response.get('col_reorder') == True
+
+
+    def test_og_datatables_datefilterview_update_hide_resource_info_success(self):
+        """Test updating hide_resource_info on an existing view"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables with Date Filter',
+            view_type='og_datatables_datefilter_view',
+            hide_resource_info=False
+        )
+
+        # Update to hide resource info
+        toolkit.get_action('resource_view_update')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id'), 'hide_resource_info': True}
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('hide_resource_info') == True

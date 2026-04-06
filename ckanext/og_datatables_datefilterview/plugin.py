@@ -49,6 +49,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
             config.get(u'ckan.datatables.view_table_displaycopyprint_default', False))
         self.col_reorder_def = toolkit.asbool(
             config.get(u'ckan.datatables.view_table_colreorder_default', True))
+        self.hide_resource_info_def = toolkit.asbool(
+            config.get(u'ckan.datatables.hide_resource_info_default', False))
 
         # https://datatables.net/reference/option/lengthMenu
         self.page_length_choices = toolkit.aslist(
@@ -105,6 +107,7 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
         data_dict['resource_view']['export_button_def'] = self.export_button_def
         data_dict['resource_view']['copy_print_buttons_def'] = self.copy_print_buttons_def
         data_dict['resource_view']['col_reorder_def'] = self.col_reorder_def
+        data_dict['resource_view']['hide_resource_info_def'] = self.hide_resource_info_def
         return u'og_datatables_datefilterview/datatables_form.html'
 
     def info(self):
@@ -142,6 +145,7 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
                 u'export_button': [configurabledefaults_validator(self.export_button_def), boolean_validator],
                 u'copy_print_buttons': [configurabledefaults_validator(self.copy_print_buttons_def), boolean_validator],
                 u'col_reorder': [configurabledefaults_validator(self.col_reorder_def), boolean_validator],
+                u'hide_resource_info': [configurabledefaults_validator(self.hide_resource_info_def), boolean_validator],
                 u'ellipsis_length': [default(self.ellipsis_length),
                                      natural_number_validator],
                 u'date_format': [default(self.date_format)],

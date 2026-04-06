@@ -52,6 +52,16 @@
       Allow column reorder
     </label>
   </div>
+  <div class="controls">
+    <label class="checkbox" for="field-hide_resource_info" title="Hide the resource information link at the bottom of the table">
+      {% if resource_view.id %}
+        <input id="field-hide_resource_info" type="checkbox" name="hide_resource_info" value="True" {{ "checked " if data.hide_resource_info }}>
+      {% else %}
+        <input id="field-hide_resource_info" type="checkbox" name="hide_resource_info" value="True" {{ "checked " if data.hide_resource_info_def }}>
+      {% endif %}
+      Hide resource information
+    </label>
+  </div>
 </div>
 
 <div class="control-group">

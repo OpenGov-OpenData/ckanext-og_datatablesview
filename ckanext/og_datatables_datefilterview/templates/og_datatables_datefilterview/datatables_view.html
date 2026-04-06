@@ -44,6 +44,7 @@
       data-copy-print-buttons="{{ resource_view.get('copy_print_buttons') }}"
       data-export-button="{{ resource_view.get('export_button') }}"
       data-col-reorder="{{ resource_view.get('col_reorder')}}"
+      data-hide-resource-info="{{ resource_view.get('hide_resource_info')|lower }}"
       data-show-id="{{ 'show_fields' not in resource_view or '_id' in resource_view.show_fields }}">
     <thead>
       <tr>

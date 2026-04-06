@@ -325,6 +325,7 @@ this.ckan.module('og_datatables_datefilter_view', function (jQuery) {
       const copyprintbuttons = dtprv.data('copy-print-buttons')
       const exportbutton = dtprv.data('export-button')
       const colreorder = dtprv.data('col-reorder')
+      const hideresourceinfo = (dtprv.data('hide-resource-info') ?? 'False').toString().toLowerCase() === 'true'
       const order = dtprv.data('order')
       const showid = (dtprv.data('show-id') ?? 'False').toString().toLowerCase() === 'true';
 
@@ -653,10 +654,14 @@ this.ckan.module('og_datatables_datefilter_view', function (jQuery) {
           })
 
           // add resourceinfo in footer, very useful if this view is embedded
-          const resourceInfo = document.getElementById('dtv-resource-info').innerText
-          $('div.resourceinfo').html('<a href="' + resourceurl + '" target="_blank">' +
-            packagename + '&mdash;' + resourcename +
-            '</a> <i class="fa fa-info-circle" title="' + resourceInfo + '"</i>')
+          if (!hideresourceinfo) {
+            const resourceInfo = document.getElementById('dtv-resource-info').innerText
+            $('div.resourceinfo').html('<a href="' + resourceurl + '" target="_blank">' +
+              packagename + '&mdash;' + resourcename +
+              '</a> <i class="fa fa-info-circle" title="' + resourceInfo + '"</i>')
+          } else {
+            $('body').addClass('hide-resource-info')
+          }
 
           // if in list/responsive mode, hide search inputs for hidden columns
           if (gcurrentView === 'list') {
