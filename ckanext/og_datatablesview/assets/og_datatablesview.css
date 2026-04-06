@@ -121,6 +121,10 @@ div.sortinfo {
   margin-top: -2.75em;
 }
 
+body.hide-resource-info #dtprv_paginate {
+  margin-top: -1.25em;
+}
+
 @media screen and (max-width: 767px) {
   #dtprv_filter {
     margin-top: 1px;
