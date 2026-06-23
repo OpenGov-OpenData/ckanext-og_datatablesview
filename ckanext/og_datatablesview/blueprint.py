@@ -9,16 +9,30 @@ import io
 from flask import Blueprint, Response
 
 
-from ckan.common import json
+from ckan.common import json, config
 from ckan.plugins.toolkit import get_action, request, h, abort
 from ckanext.datastore.writer import xml_writer
 import re
 
 ogdatatablesview = Blueprint(u'ogdatatablesview', __name__)
 
-# Page size used when streaming a null-filter export, matching CKAN's
-# datastore dump (ckanext.datastore.blueprint.PAGINATE_BY).
+# Default page size when streaming a null-filter export, matching CKAN's
+# datastore dump (ckanext.datastore.blueprint.PAGINATE_BY). The effective
+# page size is clamped to ckan.datastore.search.rows_max at call time, since
+# datastore_search_sql wraps every query in LIMIT rows_max + 1.
 EXPORT_PAGINATE_BY = 32000
+
+
+def _export_paginate_by():
+    u'''Return the page size to use when streaming a null-filter export.
+
+    datastore_search_sql caps every query at ``rows_max + 1`` rows
+    (ckanext.datastore.backend.postgres). Paging in chunks larger than
+    rows_max would make the first short page look like the end of the
+    result set, silently truncating the export, so never page above it.
+    '''
+    rows_max = int(config.get(u'ckan.datastore.search.rows_max', 32000))
+    return min(EXPORT_PAGINATE_BY, rows_max)
 
 
 def format_fts_query(search_value):
@@ -203,6 +217,30 @@ def _build_select_fields(cols):
     return u'*'
 
 
+def _build_null_filter_select_sql(resource_id, null_clauses, regular_clauses,
+                                  fts_fragment, sort_list, cols, limit,
+                                  offset):
+    u'''
+    Build the paginated SELECT statement shared by the table-view and export
+    null-filter paths, so the WHERE/SELECT/ORDER BY construction lives in one
+    place and future changes (e.g. adding a schema prefix) are a single edit.
+    '''
+    where_clause = _build_where_clause(
+        null_clauses, regular_clauses, fts_fragment
+    )
+    return (
+        u'SELECT {select_fields} FROM {resource_id} WHERE {where_clause} '
+        u'ORDER BY {order_by} LIMIT {limit} OFFSET {offset}'
+    ).format(
+        select_fields=_build_select_fields(cols),
+        resource_id=_quote_identifier(resource_id),
+        where_clause=where_clause,
+        order_by=_build_order_by(sort_list),
+        limit=int(limit),
+        offset=int(offset),
+    )
+
+
 def datastore_search_sql_null_filter(resource_id, null_clauses,
                                      regular_clauses, fts_fragment,
                                      sort_list, offset, limit, cols):
@@ -214,32 +252,25 @@ def datastore_search_sql_null_filter(resource_id, null_clauses,
     '''
     datastore_search_sql = get_action(u'datastore_search_sql')
 
+    sql = _build_null_filter_select_sql(
+        resource_id, null_clauses, regular_clauses, fts_fragment,
+        sort_list, cols, limit, offset,
+    )
+
     where_clause = _build_where_clause(
         null_clauses, regular_clauses, fts_fragment
     )
-    select_fields = _build_select_fields(cols)
-    order_by = _build_order_by(sort_list)
-    safe_resource_id = _quote_identifier(resource_id)
-
-    sql = (
-        u'SELECT {select_fields} FROM {resource_id} WHERE {where_clause} '
-        u'ORDER BY {order_by} LIMIT {limit} OFFSET {offset}'
-    ).format(
-        select_fields=select_fields,
-        resource_id=safe_resource_id,
-        where_clause=where_clause,
-        order_by=order_by,
-        limit=int(limit),
-        offset=int(offset),
-    )
-
     count_sql = (
         u'SELECT COUNT(*) as total FROM {resource_id} WHERE {where_clause}'
     ).format(
-        resource_id=safe_resource_id,
+        resource_id=_quote_identifier(resource_id),
         where_clause=where_clause,
     )
 
+    # DataTables needs the filtered total for its pager, so a separate
+    # COUNT(*) runs alongside the page query. This means each page pays a
+    # count scan; acceptable here since the null-filter path is the
+    # exception rather than the common case.
     response = datastore_search_sql(None, {u'sql': sql})
     count_response = datastore_search_sql(None, {u'sql': count_sql})
 
@@ -256,34 +287,21 @@ def datastore_search_sql_null_filter(resource_id, null_clauses,
 
 def _iter_sql_null_filter_records(resource_id, null_clauses, regular_clauses,
                                   fts_fragment, sort_list, cols,
-                                  paginate_by=EXPORT_PAGINATE_BY):
+                                  paginate_by=None):
     u'''
     Yield records for a null-filter query page by page via
     datastore_search_sql, so an export never loads the whole result set
     into memory at once and is not silently capped at a fixed limit.
     '''
+    if paginate_by is None:
+        paginate_by = _export_paginate_by()
     datastore_search_sql = get_action(u'datastore_search_sql')
-
-    where_clause = _build_where_clause(
-        null_clauses, regular_clauses, fts_fragment
-    )
-    select_fields = _build_select_fields(cols)
-    order_by = _build_order_by(sort_list)
-    safe_resource_id = _quote_identifier(resource_id)
 
     offset = 0
     while True:
-        sql = (
-            u'SELECT {select_fields} FROM {resource_id} '
-            u'WHERE {where_clause} ORDER BY {order_by} '
-            u'LIMIT {limit} OFFSET {offset}'
-        ).format(
-            select_fields=select_fields,
-            resource_id=safe_resource_id,
-            where_clause=where_clause,
-            order_by=order_by,
-            limit=int(paginate_by),
-            offset=int(offset),
+        sql = _build_null_filter_select_sql(
+            resource_id, null_clauses, regular_clauses, fts_fragment,
+            sort_list, cols, paginate_by, offset,
         )
         response = datastore_search_sql(None, {u'sql': sql})
         records = response.get(u'records', [])
@@ -520,13 +538,15 @@ def filtered_download(resource_view_id):
     except Exception:
         return abort(400, u'Invalid search query...')
 
-    def stream_records():
-        return records
-
     if export_format == u'xml':
         def generate_xml():
             with xml_writer([{u'id': c} for c in cols]) as writer:
-                for record in stream_records():
+                # Flush the opening <data> tag up front. xml_writer only
+                # emits it on the first write_records() call, so an empty
+                # result set would otherwise yield just </data> and produce
+                # malformed XML.
+                yield writer.write_records([])
+                for record in records:
                     yield writer.write_records(
                         [{c: record.get(c) for c in cols}]
                     )
@@ -542,7 +562,7 @@ def filtered_download(resource_view_id):
         def generate_json():
             yield u'[\n'
             first = True
-            for record in stream_records():
+            for record in records:
                 row = {c: record.get(c) for c in cols}
                 yield (u'' if first else u',\n') + json.dumps(row)
                 first = False
@@ -570,7 +590,7 @@ def filtered_download(resource_view_id):
         yield buf.getvalue()
         buf.seek(0)
         buf.truncate(0)
-        for record in stream_records():
+        for record in records:
             writer.writerow(record)
             yield buf.getvalue()
             buf.seek(0)
