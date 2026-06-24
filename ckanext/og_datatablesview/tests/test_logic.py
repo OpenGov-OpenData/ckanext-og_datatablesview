@@ -2,7 +2,16 @@ import pytest
 
 import ckan.plugins.toolkit as toolkit
 from ckan.tests import factories
-from ckanext.og_datatablesview.blueprint import format_fts_query
+from ckanext.og_datatablesview.blueprint import (
+    format_fts_query,
+    build_filter_where_fragments,
+    build_fts_where_fragment,
+    _quote_identifier,
+    _quote_literal,
+    _build_where_clause,
+    _build_select_fields,
+    _build_order_by,
+)
 
 
 @pytest.mark.usefixtures("clean_db")
@@ -446,3 +455,179 @@ class TestFormatFtsQuery:
         # Date with compound word in same search
         result = format_fts_query('Board/Village 1/13/2025')
         assert result == '(Board:* | Village:*) & 1/13/2025:*'
+
+
+class TestBuildFilterWhereFragments:
+
+    def test_no_filters(self):
+        null_clauses, regular_clauses = build_filter_where_fragments({})
+        assert null_clauses == []
+        assert regular_clauses == []
+
+    def test_null_only(self):
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Status': ['']}
+        )
+        assert null_clauses == [
+            '("Status" IS NULL OR "Status" = \'\')'
+        ]
+        assert regular_clauses == []
+
+    def test_null_with_real_values(self):
+        # Empty string plus real values for the same column
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Status': ['', 'Open', 'Closed']}
+        )
+        assert null_clauses == [
+            '("Status" IS NULL OR "Status" = \'\' '
+            'OR "Status" IN (\'Open\', \'Closed\'))'
+        ]
+        assert regular_clauses == []
+
+    def test_single_regular_filter(self):
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Department': ['BTDT']}
+        )
+        assert null_clauses == []
+        assert regular_clauses == ['"Department" = \'BTDT\'']
+
+    def test_multiple_regular_filter_values_use_in(self):
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Department': ['BTDT', 'INFO']}
+        )
+        assert null_clauses == []
+        assert regular_clauses == [
+            '"Department" IN (\'BTDT\', \'INFO\')'
+        ]
+
+    def test_mixed_null_and_regular_filters(self):
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Status': [''], 'Department': ['BTDT']}
+        )
+        assert null_clauses == [
+            '("Status" IS NULL OR "Status" = \'\')'
+        ]
+        assert regular_clauses == ['"Department" = \'BTDT\'']
+
+    def test_scalar_value_normalised(self):
+        null_clauses, regular_clauses = build_filter_where_fragments(
+            {'Department': 'BTDT'}
+        )
+        assert regular_clauses == ['"Department" = \'BTDT\'']
+
+    def test_identifier_escaping(self):
+        # Double quotes in column name must be doubled
+        null_clauses, _ = build_filter_where_fragments({'a"b': ['']})
+        assert null_clauses == ['("a""b" IS NULL OR "a""b" = \'\')']
+
+    def test_literal_escaping(self):
+        # Single quotes in value must be doubled
+        _, regular_clauses = build_filter_where_fragments(
+            {'Name': ["O'Brien"]}
+        )
+        assert regular_clauses == ['"Name" = \'O\'\'Brien\'']
+
+    def test_column_name_with_spaces(self):
+        null_clauses, _ = build_filter_where_fragments(
+            {'MPN Approval Status': ['']}
+        )
+        assert null_clauses == [
+            '("MPN Approval Status" IS NULL '
+            'OR "MPN Approval Status" = \'\')'
+        ]
+
+
+class TestBuildFtsWhereFragment:
+
+    def test_no_search(self):
+        assert build_fts_where_fragment({}, None) is None
+        assert build_fts_where_fragment({}, '') is None
+
+    def test_plain_query(self):
+        result = build_fts_where_fragment({}, 'boston:*')
+        assert result == "_full_text @@ to_tsquery('simple', 'boston:*')"
+
+    def test_per_column_query(self):
+        result = build_fts_where_fragment({'name': 'boston:*'}, None)
+        assert result == (
+            "to_tsvector('simple', cast(\"name\" as text)) "
+            "@@ to_tsquery('simple', 'boston:*')"
+        )
+
+    def test_colsearch_takes_precedence_over_plain(self):
+        result = build_fts_where_fragment({'name': 'boston:*'}, 'ignored:*')
+        assert 'to_tsvector' in result
+        assert 'ignored' not in result
+
+    def test_per_column_multiple_columns(self):
+        result = build_fts_where_fragment(
+            {'name': 'a:*', 'city': 'b:*'}, None
+        )
+        assert (
+            "to_tsvector('simple', cast(\"name\" as text)) "
+            "@@ to_tsquery('simple', 'a:*')"
+        ) in result
+        assert (
+            "to_tsvector('simple', cast(\"city\" as text)) "
+            "@@ to_tsquery('simple', 'b:*')"
+        ) in result
+        assert ' AND ' in result
+
+    def test_literal_escaping(self):
+        result = build_fts_where_fragment({}, "o'brien:*")
+        assert result == "_full_text @@ to_tsquery('simple', 'o''brien:*')"
+
+
+class TestQuoting:
+
+    def test_identifier_doubles_quotes(self):
+        assert _quote_identifier('a"b') == '"a""b"'
+
+    def test_identifier_strips_nul(self):
+        # NUL bytes must be stripped, matching CKAN's postgres.identifier
+        assert _quote_identifier('a\x00b') == '"ab"'
+
+    def test_literal_doubles_single_quotes(self):
+        assert _quote_literal("O'Brien") == "'O''Brien'"
+
+    def test_literal_strips_nul(self):
+        # NUL bytes must be stripped, matching CKAN's postgres.literal_string
+        assert _quote_literal('a\x00b') == "'ab'"
+
+
+class TestBuildWhereClause:
+
+    def test_no_clauses_returns_true(self):
+        assert _build_where_clause([], [], None) == '1=1'
+
+    def test_combines_all_clauses_with_and(self):
+        result = _build_where_clause(
+            ['(x IS NULL)'], ['"d" = \'a\''], 'fts_frag'
+        )
+        assert result == "(x IS NULL) AND \"d\" = 'a' AND fts_frag"
+
+    def test_skips_empty_fts_fragment(self):
+        result = _build_where_clause(['(x IS NULL)'], [], None)
+        assert result == '(x IS NULL)'
+
+
+class TestBuildSelectFields:
+
+    def test_quotes_each_column(self):
+        assert _build_select_fields(['a', 'b c']) == '"a", "b c"'
+
+    def test_empty_cols_returns_star(self):
+        assert _build_select_fields([]) == '*'
+
+
+class TestBuildOrderBy:
+
+    def test_no_sort_defaults_to_id(self):
+        assert _build_order_by([]) == '"_id" asc'
+
+    def test_column_with_spaces(self):
+        assert _build_order_by(['MPN Approval Status asc']) == \
+            '"MPN Approval Status" asc'
+
+    def test_multiple_sorts(self):
+        assert _build_order_by(['a asc', 'b desc']) == '"a" asc, "b" desc'
