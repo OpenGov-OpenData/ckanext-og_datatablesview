@@ -1,8 +1,76 @@
 # encoding: utf-8
+import json
+
 import ckan.plugins.toolkit as toolkit
 from typing import (
     Any, Optional
 )
+
+
+# Datastore/postgres numeric type names the prefix option applies to. The data
+# dictionary reports postgres type names (e.g. numeric, int4, float8), so we
+# match against those as well as the friendlier aliases.
+NUMERIC_COLUMN_TYPES = frozenset({
+    'numeric', 'number', 'decimal', 'money',
+    'int', 'integer', 'smallint', 'bigint',
+    'int2', 'int4', 'int8',
+    'float', 'float4', 'float8', 'real', 'double precision',
+})
+
+
+def og_datatablesview_is_numeric_column(field_type: Any) -> bool:
+    """
+    Return True if the given data dictionary column type is a numeric type.
+
+    Used by the config form to only offer the display-prefix option on numeric
+    columns.
+    """
+    return str(field_type or '').lower() in NUMERIC_COLUMN_TYPES
+
+
+def _og_datatablesview_column_affixes(value: Any) -> dict[str, str]:
+    """
+    Normalise a per-column affix map (prefixes or suffixes) into a
+    ``{column_id: affix}`` dict.
+
+    The value can arrive as a dict (the validated config, e.g. on the initial
+    edit form or in the view) or as a JSON string (the raw value POSTed by the
+    config form when it is re-rendered after a validation error). Blank affixes
+    are dropped so we only keep columns that actually have one.
+    """
+    if not value:
+        return {}
+
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return {}
+
+    if not isinstance(value, dict):
+        return {}
+
+    return {
+        str(k): str(v)
+        for k, v in value.items()
+        if v is not None and str(v) != ''
+    }
+
+
+def og_datatablesview_column_prefixes(value: Any) -> dict[str, str]:
+    """
+    Normalise the per-column display prefixes into a ``{column_id: prefix}``
+    dict. See :func:`_og_datatablesview_column_affixes`.
+    """
+    return _og_datatablesview_column_affixes(value)
+
+
+def og_datatablesview_column_suffixes(value: Any) -> dict[str, str]:
+    """
+    Normalise the per-column display suffixes into a ``{column_id: suffix}``
+    dict. See :func:`_og_datatablesview_column_affixes`.
+    """
+    return _og_datatablesview_column_affixes(value)
 
 
 def og_datatables_datefilterview_null_label() -> str:
