@@ -28,6 +28,21 @@ def og_datatablesview_is_numeric_column(field_type: Any) -> bool:
     return str(field_type or '').lower() in NUMERIC_COLUMN_TYPES
 
 
+def og_datatablesview_has_numeric_column(fields: Any) -> bool:
+    """
+    Return True if any field in the given data dictionary list is numeric.
+
+    Used by the config form to hide the Prefix/Suffix columns entirely when a
+    resource has no numeric columns (so they are not shown as empty columns).
+    """
+    if not fields:
+        return False
+    return any(
+        og_datatablesview_is_numeric_column(f.get('type'))
+        for f in fields
+    )
+
+
 def _og_datatablesview_column_affixes(value: Any) -> dict[str, str]:
     """
     Normalise a per-column affix map (prefixes or suffixes) into a

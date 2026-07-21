@@ -7,7 +7,10 @@ from ckanext.og_datatablesview.plugin import (
     og_datatables_column_prefixes,
     og_datatables_column_suffixes,
 )
-from ckanext.og_datatablesview.helpers import og_datatablesview_is_numeric_column
+from ckanext.og_datatablesview.helpers import (
+    og_datatablesview_is_numeric_column,
+    og_datatablesview_has_numeric_column,
+)
 from ckanext.og_datatablesview.blueprint import (
     format_fts_query,
     build_filter_where_fragments,
@@ -614,6 +617,40 @@ class TestIsNumericColumn:
     ])
     def test_non_numeric_types_false(self, field_type):
         assert og_datatablesview_is_numeric_column(field_type) is False
+
+
+class TestHasNumericColumn:
+    """Unit tests for the og_datatablesview_has_numeric_column helper"""
+
+    def test_true_when_any_field_numeric(self):
+        fields = [
+            {'id': 'name', 'type': 'text'},
+            {'id': 'amount', 'type': 'numeric'},
+        ]
+        assert og_datatablesview_has_numeric_column(fields) is True
+
+    def test_true_with_postgres_type_name(self):
+        assert og_datatablesview_has_numeric_column(
+            [{'id': 'n', 'type': 'int4'}]
+        ) is True
+
+    def test_false_when_all_text(self):
+        fields = [
+            {'id': 'name', 'type': 'text'},
+            {'id': 'city', 'type': 'text'},
+            {'id': 'created', 'type': 'timestamp'},
+        ]
+        assert og_datatablesview_has_numeric_column(fields) is False
+
+    def test_false_for_empty_list(self):
+        assert og_datatablesview_has_numeric_column([]) is False
+
+    def test_false_for_none(self):
+        assert og_datatablesview_has_numeric_column(None) is False
+
+    def test_field_without_type_key(self):
+        # a malformed field dict should not blow up
+        assert og_datatablesview_has_numeric_column([{'id': 'x'}]) is False
 
 
 class TestFormatFtsQuery:
