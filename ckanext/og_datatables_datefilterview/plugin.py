@@ -176,6 +176,7 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
             'og_datatablesview_column_prefixes': helpers.og_datatablesview_column_prefixes,
             'og_datatablesview_column_suffixes': helpers.og_datatablesview_column_suffixes,
             'og_datatablesview_is_numeric_column': helpers.og_datatablesview_is_numeric_column,
+            'og_datatablesview_has_numeric_column': helpers.og_datatablesview_has_numeric_column,
         }
 
 
