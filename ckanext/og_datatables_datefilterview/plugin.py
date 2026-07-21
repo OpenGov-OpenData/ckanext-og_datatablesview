@@ -152,6 +152,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
                 u'show_fields': [ignore_missing],
                 u'sort_column': [ignore_missing],
                 u'sort_order': [ignore_missing],
+                u'column_prefixes': [ignore_missing, og_datatables_column_prefixes],
+                u'column_suffixes': [ignore_missing, og_datatables_column_suffixes],
                 u'filterable': [default(True), boolean_validator],
             }
         }
@@ -161,6 +163,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
     def get_validators(self):
         return {
             'configurabledefaults_validator': configurabledefaults_validator,
+            'og_datatables_column_prefixes': og_datatables_column_prefixes,
+            'og_datatables_column_suffixes': og_datatables_column_suffixes,
         }
 
     # ITemplateHelpers
@@ -169,7 +173,32 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
         return {
             'og_datatables_datefilterview_null_label': helpers.og_datatables_datefilterview_null_label,
             'og_datastore_dictionary': helpers.og_datastore_dictionary,
+            'og_datatablesview_column_prefixes': helpers.og_datatablesview_column_prefixes,
+            'og_datatablesview_column_suffixes': helpers.og_datatablesview_column_suffixes,
+            'og_datatablesview_is_numeric_column': helpers.og_datatablesview_is_numeric_column,
         }
+
+
+def og_datatables_column_prefixes(value):
+    u'''
+    Validator for the per-column display prefixes. The value arrives as a JSON
+    string when POSTed from the config form, or as a dict when set via the
+    API/tests. Delegates to the shared helper so the form template and the
+    stored config always use the same normalisation.
+    '''
+    if value is missing:
+        return {}
+    return helpers.og_datatablesview_column_prefixes(value)
+
+
+def og_datatables_column_suffixes(value):
+    u'''
+    Validator for the per-column display suffixes. Mirrors
+    :func:`og_datatables_column_prefixes`.
+    '''
+    if value is missing:
+        return {}
+    return helpers.og_datatablesview_column_suffixes(value)
 
 
 def configurabledefaults_validator(default_configurable_value):

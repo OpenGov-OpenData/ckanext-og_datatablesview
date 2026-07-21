@@ -71,12 +71,16 @@
     <button class="dt-show-all btn btn-default btn-sm" type="button" aria-label="Show all fields"><span class="me-3"><i class="fa fa-eye"></i>&nbsp;{{ _('Show All') }}</span></button>
     <button class="dt-hide-all btn btn-default btn-sm" type="button" aria-label="Hide all fields"><span><i class="fa fa-eye-slash"></i>&nbsp;{{ _('Hide All') }}</span></button>
   </div>
+  {% set column_prefixes = h.og_datatablesview_column_prefixes(data.get('column_prefixes')) %}
+  {% set column_suffixes = h.og_datatablesview_column_suffixes(data.get('column_suffixes')) %}
   <div class="controls dt-select-columns mt-3">
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
           <th scope="col">{{ _('Column') }}</th>
           <th scope="col">{{ _('Label') }}</th>
+          <th scope="col">{{ _('Prefix') }}</th>
+          <th scope="col">{{ _('Suffix') }}</th>
         </tr>
       </thead>
         <tr>
@@ -90,6 +94,8 @@
             'checked' if '_id' in data.show_fields else '' }}
             />_id</label>
           </td>
+          <td></td>
+          <td></td>
           <td></td>
         </tr>
       {% for f in h.datastore_dictionary(resource.id) %}
@@ -108,10 +114,32 @@
               {{ f.get('info', {}).label }}
             {%- endblock -%}
           </td>
+          <td>
+            {%- if h.og_datatablesview_is_numeric_column(f.type) -%}
+            <input type="text" class="form-control dt-col-prefix"
+              data-colid="{{ f.id }}"
+              value="{{ column_prefixes.get(f.id, '') }}"
+              placeholder="{{ _('E.g. $') }}"
+              aria-label="{{ _('Prefix for') }} {{ f.id }}"
+              title="{{ _('Text to prepend to each value in this column (display only)') }}" />
+            {%- endif -%}
+          </td>
+          <td>
+            {%- if h.og_datatablesview_is_numeric_column(f.type) -%}
+            <input type="text" class="form-control dt-col-suffix"
+              data-colid="{{ f.id }}"
+              value="{{ column_suffixes.get(f.id, '') }}"
+              placeholder="{{ _('E.g. dollars') }}"
+              aria-label="{{ _('Suffix for') }} {{ f.id }}"
+              title="{{ _('Text to append to each value in this column (display only)') }}" />
+            {%- endif -%}
+          </td>
         </tr>
       {% endfor %}
     </table>
   </div>
+  <input type="hidden" name="column_prefixes" id="field-column_prefixes" />
+  <input type="hidden" name="column_suffixes" id="field-column_suffixes" />
 </div>
 
 <div class="form-group control-select">

@@ -1,7 +1,13 @@
 import pytest
 
 import ckan.plugins.toolkit as toolkit
+import ckan.lib.navl.dictization_functions as df
 from ckan.tests import factories
+from ckanext.og_datatablesview.plugin import (
+    og_datatables_column_prefixes,
+    og_datatables_column_suffixes,
+)
+from ckanext.og_datatablesview.helpers import og_datatablesview_is_numeric_column
 from ckanext.og_datatablesview.blueprint import (
     format_fts_query,
     build_filter_where_fragments,
@@ -368,6 +374,246 @@ class TestUtils:
         )
 
         assert response.get('hide_resource_info') == True
+
+
+    def test_og_datatableview_column_prefixes_dict_success(self):
+        """A dict of column prefixes round-trips through the view config"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view',
+            column_prefixes={'amount': '$', 'total_fees': '$'}
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('column_prefixes') == {
+            'amount': '$', 'total_fees': '$'
+        }
+
+
+    def test_og_datatableview_column_prefixes_default_empty_success(self):
+        """column_prefixes is absent/empty when not specified"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view'
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert not response.get('column_prefixes')
+
+
+    def test_og_datatableview_column_suffixes_dict_success(self):
+        """A dict of column suffixes round-trips through the view config"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view',
+            column_suffixes={'amount': ' dollars', 'sq_feet': ' sqft'}
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('column_suffixes') == {
+            'amount': ' dollars', 'sq_feet': ' sqft'
+        }
+
+
+    def test_og_datatableview_column_suffixes_default_empty_success(self):
+        """column_suffixes is absent/empty when not specified"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view'
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert not response.get('column_suffixes')
+
+
+    def test_og_datatableview_column_prefix_and_suffix_together_success(self):
+        """Prefix and suffix are stored independently on the same view"""
+        sysadmin = factories.Sysadmin()
+        dataset = factories.Dataset()
+        resource = factories.Resource(
+            package_id=dataset['id'],
+            format='CSV'
+        )
+        resource_view = factories.ResourceView(
+            resource_id=resource['id'],
+            title='OG Data Tables',
+            view_type='og_datatables_view',
+            column_prefixes={'amount': '$'},
+            column_suffixes={'amount': ' dollars'}
+        )
+
+        response = toolkit.get_action('resource_view_show')(
+            {'user': sysadmin.get('name')},
+            {'id': resource_view.get('id')}
+        )
+
+        assert response.get('column_prefixes') == {'amount': '$'}
+        assert response.get('column_suffixes') == {'amount': ' dollars'}
+
+
+class TestColumnPrefixesValidator:
+    """Unit tests for the og_datatables_column_prefixes validator"""
+
+    def test_missing_returns_empty(self):
+        assert og_datatables_column_prefixes(df.missing) == {}
+
+    def test_none_returns_empty(self):
+        assert og_datatables_column_prefixes(None) == {}
+
+    def test_empty_string_returns_empty(self):
+        assert og_datatables_column_prefixes('') == {}
+
+    def test_dict_passthrough(self):
+        assert og_datatables_column_prefixes({'amount': '$'}) == {'amount': '$'}
+
+    def test_json_string_decoded(self):
+        # this is how the config form POSTs the value
+        assert og_datatables_column_prefixes('{"amount": "$"}') == {'amount': '$'}
+
+    def test_json_string_and_dict_normalise_identically(self):
+        as_dict = og_datatables_column_prefixes({'a': '$', 'b': '#'})
+        as_json = og_datatables_column_prefixes('{"a": "$", "b": "#"}')
+        assert as_dict == as_json == {'a': '$', 'b': '#'}
+
+    def test_blank_prefixes_dropped(self):
+        assert og_datatables_column_prefixes(
+            {'a': '$', 'b': '', 'c': None}
+        ) == {'a': '$'}
+
+    def test_invalid_json_returns_empty(self):
+        assert og_datatables_column_prefixes('not json') == {}
+
+    def test_non_dict_json_returns_empty(self):
+        assert og_datatables_column_prefixes('[1, 2, 3]') == {}
+
+    def test_values_coerced_to_str(self):
+        assert og_datatables_column_prefixes({'a': 5}) == {'a': '5'}
+
+    def test_xss_payload_stored_verbatim(self):
+        # the validator stores the raw string; escaping happens at render time
+        payload = '<img src=x onerror=alert(1)>'
+        assert og_datatables_column_prefixes(
+            {'a': payload}
+        ) == {'a': payload}
+
+
+class TestColumnSuffixesValidator:
+    """Unit tests for the og_datatables_column_suffixes validator"""
+
+    def test_missing_returns_empty(self):
+        assert og_datatables_column_suffixes(df.missing) == {}
+
+    def test_none_returns_empty(self):
+        assert og_datatables_column_suffixes(None) == {}
+
+    def test_empty_string_returns_empty(self):
+        assert og_datatables_column_suffixes('') == {}
+
+    def test_dict_passthrough(self):
+        assert og_datatables_column_suffixes(
+            {'amount': ' dollars'}
+        ) == {'amount': ' dollars'}
+
+    def test_json_string_decoded(self):
+        # this is how the config form POSTs the value
+        assert og_datatables_column_suffixes(
+            '{"amount": " dollars"}'
+        ) == {'amount': ' dollars'}
+
+    def test_json_string_and_dict_normalise_identically(self):
+        as_dict = og_datatables_column_suffixes({'a': ' kg', 'b': '%'})
+        as_json = og_datatables_column_suffixes('{"a": " kg", "b": "%"}')
+        assert as_dict == as_json == {'a': ' kg', 'b': '%'}
+
+    def test_blank_suffixes_dropped(self):
+        assert og_datatables_column_suffixes(
+            {'a': ' kg', 'b': '', 'c': None}
+        ) == {'a': ' kg'}
+
+    def test_invalid_json_returns_empty(self):
+        assert og_datatables_column_suffixes('not json') == {}
+
+    def test_non_dict_json_returns_empty(self):
+        assert og_datatables_column_suffixes('[1, 2, 3]') == {}
+
+    def test_values_coerced_to_str(self):
+        assert og_datatables_column_suffixes({'a': 5}) == {'a': '5'}
+
+    def test_xss_payload_stored_verbatim(self):
+        # the validator stores the raw string; escaping happens at render time
+        payload = '<img src=x onerror=alert(1)>'
+        assert og_datatables_column_suffixes(
+            {'a': payload}
+        ) == {'a': payload}
+
+
+class TestIsNumericColumn:
+    """Unit tests for the og_datatablesview_is_numeric_column helper"""
+
+    @pytest.mark.parametrize('field_type', [
+        'numeric', 'number', 'decimal', 'money',
+        'int', 'integer', 'smallint', 'bigint',
+        'int2', 'int4', 'int8',
+        'float', 'float4', 'float8', 'real', 'double precision',
+    ])
+    def test_numeric_types_true(self, field_type):
+        assert og_datatablesview_is_numeric_column(field_type) is True
+
+    def test_case_insensitive(self):
+        assert og_datatablesview_is_numeric_column('Int8') is True
+        assert og_datatablesview_is_numeric_column('NUMERIC') is True
+        assert og_datatablesview_is_numeric_column('MONEY') is True
+
+    @pytest.mark.parametrize('field_type', [
+        'text', 'timestamp', 'timestamptz', 'date', 'bool', 'json',
+        '', None,
+    ])
+    def test_non_numeric_types_false(self, field_type):
+        assert og_datatablesview_is_numeric_column(field_type) is False
 
 
 class TestFormatFtsQuery:

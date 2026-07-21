@@ -411,6 +411,30 @@ this.ckan.module('og_datatables_datefilter_view', function (jQuery) {
               }
             }
         }
+
+        // apply the per-column display prefix/suffix, if any are configured.
+        // this wraps whatever render the column already has (numeric has none,
+        // dates/html do) and only touches the 'display' value, so ordering,
+        // searching and the underlying data stay untouched.
+        const rawPrefix = (typeof gcolumnPrefixes !== 'undefined' &&
+          gcolumnPrefixes[colDefn.id]) || ''
+        const rawSuffix = (typeof gcolumnSuffixes !== 'undefined' &&
+          gcolumnSuffixes[colDefn.id]) || ''
+        if (rawPrefix || rawSuffix) {
+          const prefix = esc(rawPrefix)
+          const suffix = esc(rawSuffix)
+          const baseRender = colDict.render
+          colDict.render = function (data, type, row, meta) {
+            const rendered = baseRender ? baseRender(data, type, row, meta) : data
+            if (type !== 'display') {
+              return rendered
+            }
+            if (rendered === null || rendered === undefined || rendered === '') {
+              return rendered
+            }
+            return prefix + rendered + suffix
+          }
+        }
         dynamicCols.push(colDict)
       })
 
