@@ -18,6 +18,8 @@
     const gresviewId = '{{ resource_view.id }}'
     const gcolumnPrefixes = {{ resource_view.get('column_prefixes', {})|tojson }}
     const gcolumnSuffixes = {{ resource_view.get('column_suffixes', {})|tojson }}
+    const gcolumnThousands = {{ resource_view.get('column_thousands', {})|tojson }}
+    const gcolumnAlignments = {{ resource_view.get('column_alignments', {})|tojson }}
 </script>
 
 <div id="resize_wrapper">

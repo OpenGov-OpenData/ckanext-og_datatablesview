@@ -73,6 +73,8 @@
   </div>
   {% set column_prefixes = h.og_datatablesview_column_prefixes(data.get('column_prefixes')) %}
   {% set column_suffixes = h.og_datatablesview_column_suffixes(data.get('column_suffixes')) %}
+  {% set column_thousands = h.og_datatablesview_column_thousands(data.get('column_thousands')) %}
+  {% set column_alignments = h.og_datatablesview_column_alignments(data.get('column_alignments')) %}
   {% set dt_fields = h.datastore_dictionary(resource.id) %}
   {% set show_affixes = h.og_datatablesview_has_numeric_column(dt_fields) %}
   <div class="controls dt-select-columns mt-3">
@@ -84,6 +86,8 @@
           {% if show_affixes %}
           <th scope="col">{{ _('Prefix') }}</th>
           <th scope="col">{{ _('Suffix') }}</th>
+          <th scope="col">{{ _('Thousands Separator') }}</th>
+          <th scope="col">{{ _('Right Align') }}</th>
           {% endif %}
         </tr>
       </thead>
@@ -100,6 +104,8 @@
           </td>
           <td></td>
           {% if show_affixes %}
+          <td></td>
+          <td></td>
           <td></td>
           <td></td>
           {% endif %}
@@ -141,6 +147,24 @@
               title="{{ _('Text to append to each value in this column (display only)') }}" />
             {%- endif -%}
           </td>
+          <td>
+            {%- if h.og_datatablesview_is_numeric_column(f.type) -%}
+            <input type="checkbox" class="dt-col-thousands"
+              data-colid="{{ f.id }}"
+              {{ 'checked' if column_thousands.get(f.id) else '' }}
+              aria-label="{{ _('Thousands separator for') }} {{ f.id }}"
+              title="{{ _('Format numbers with thousands separators (display only)') }}" />
+            {%- endif -%}
+          </td>
+          <td>
+            {%- if h.og_datatablesview_is_numeric_column(f.type) -%}
+            <input type="checkbox" class="dt-col-alignments"
+              data-colid="{{ f.id }}"
+              {{ 'checked' if column_alignments.get(f.id) else '' }}
+              aria-label="{{ _('Right-align') }} {{ f.id }}"
+              title="{{ _('Right-align this column (display only)') }}" />
+            {%- endif -%}
+          </td>
           {% endif %}
         </tr>
       {% endfor %}
@@ -148,6 +172,8 @@
   </div>
   <input type="hidden" name="column_prefixes" id="field-column_prefixes" />
   <input type="hidden" name="column_suffixes" id="field-column_suffixes" />
+  <input type="hidden" name="column_thousands" id="field-column_thousands" />
+  <input type="hidden" name="column_alignments" id="field-column_alignments" />
 </div>
 
 <div class="form-group control-select">
