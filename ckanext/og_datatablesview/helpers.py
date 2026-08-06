@@ -88,6 +88,24 @@ def og_datatablesview_column_suffixes(value: Any) -> dict[str, str]:
     return _og_datatablesview_column_affixes(value)
 
 
+def og_datatablesview_column_thousands(value: Any) -> dict[str, str]:
+    """
+    Normalise the per-column thousands-separator flags into a
+    ``{column_id: "1"}`` dict for enabled columns.
+    See :func:`_og_datatablesview_column_affixes`.
+    """
+    return _og_datatablesview_column_affixes(value)
+
+
+def og_datatablesview_column_alignments(value: Any) -> dict[str, str]:
+    """
+    Normalise the per-column right-alignment flags into a
+    ``{column_id: "1"}`` dict for enabled columns.
+    See :func:`_og_datatablesview_column_affixes`.
+    """
+    return _og_datatablesview_column_affixes(value)
+
+
 def og_datatablesview_null_label() -> str:
     """
     Get the label used to display NoneType values for the front-end

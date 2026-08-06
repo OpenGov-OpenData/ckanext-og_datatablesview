@@ -10,28 +10,31 @@ window.addEventListener('load', function(){
       $(dtColSelects).prop('checked', false).change().blur();
     });
 
-    // Serialize the per-column prefix/suffix inputs into the single hidden
-    // column_prefixes / column_suffixes fields on submit. The column ids are
-    // dynamic, so we can't POST one field per column; instead we send a JSON
-    // map keyed by column id, which the matching validator decodes.
-    function serializeAffixes(inputClass, hiddenSelector){
+    // Serialize per-column inputs into a single hidden field on submit.
+    // The column ids are dynamic, so we can't POST one field per column;
+    // instead we send a JSON map keyed by column id, which the matching
+    // validator decodes. getValue(el) returns the value to store, or
+    // undefined to skip that column.
+    function serializeColumnInputs(inputClass, hiddenSelector, getValue) {
       let hiddenField = $(hiddenSelector);
       if (!hiddenField.length) {
         return;
       }
-      hiddenField.closest('form').on('submit', function(){
-        let affixes = {};
-        $(inputClass).each(function(){
+      hiddenField.closest('form').on('submit', function () {
+        let result = {};
+        $(inputClass).each(function () {
           let colid = $(this).data('colid');
-          let val = $(this).val();
-          if (colid !== undefined && val !== '') {
-            affixes[colid] = val;
+          let val = getValue(this);
+          if (colid !== undefined && val !== undefined) {
+            result[colid] = val;
           }
         });
-        hiddenField.val(JSON.stringify(affixes));
+        hiddenField.val(JSON.stringify(result));
       });
     }
-    serializeAffixes('.dt-col-prefix', '#field-column_prefixes');
-    serializeAffixes('.dt-col-suffix', '#field-column_suffixes');
+    serializeColumnInputs('.dt-col-prefix',     '#field-column_prefixes',   function (el) { let v = $(el).val(); return v !== '' ? v : undefined; });
+    serializeColumnInputs('.dt-col-suffix',     '#field-column_suffixes',   function (el) { let v = $(el).val(); return v !== '' ? v : undefined; });
+    serializeColumnInputs('.dt-col-thousands',  '#field-column_thousands',  function (el) { return $(el).is(':checked') ? '1' : undefined; });
+    serializeColumnInputs('.dt-col-alignments', '#field-column_alignments', function (el) { return $(el).is(':checked') ? '1' : undefined; });
   });
 });

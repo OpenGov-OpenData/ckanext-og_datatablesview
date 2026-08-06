@@ -347,6 +347,11 @@ this.ckan.module('og_datatables_view', function (jQuery) {
         visible: showid,
       }]
 
+      const colThousands  = (typeof gcolumnThousands  !== 'undefined') ? gcolumnThousands  : {}
+      const colAlignments = (typeof gcolumnAlignments !== 'undefined') ? gcolumnAlignments : {}
+      const colPrefixes   = (typeof gcolumnPrefixes   !== 'undefined') ? gcolumnPrefixes   : {}
+      const colSuffixes   = (typeof gcolumnSuffixes   !== 'undefined') ? gcolumnSuffixes   : {}
+
       gdataDict.forEach((colDefn, idx) => {
         const colDict = { name: colDefn['id'], data: colDefn['id'].replace('.', ''), contentPadding: 'MM' }
         switch (colDefn.type) {
@@ -412,14 +417,45 @@ this.ckan.module('og_datatables_view', function (jQuery) {
             }
         }
 
+        // apply thousands separator formatting for configured numeric columns.
+        // runs before prefix/suffix so that affixes wrap the formatted number.
+        if (colThousands[colDefn.id]) {
+          const baseRenderThousands = colDict.render
+          const fmtCache = {}
+          colDict.render = function (data, type, row, meta) {
+            const rendered = baseRenderThousands ? baseRenderThousands(data, type, row, meta) : data
+            if (type !== 'display') {
+              return rendered
+            }
+            const str = String(data ?? '').trim()
+            if (str === '') {
+              return rendered
+            }
+            const num = parseFloat(str)
+            if (isNaN(num)) {
+              return rendered
+            }
+            const normalised = num.toString()
+            const dotIdx = normalised.indexOf('.')
+            const decimals = dotIdx >= 0 ? normalised.length - dotIdx - 1 : 0
+            const fmt = fmtCache[decimals] || (fmtCache[decimals] = new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: decimals,
+              maximumFractionDigits: decimals
+            }))
+            return fmt.format(num)
+          }
+        }
+
+        if (colAlignments[colDefn.id]) {
+          colDict.className = ((colDict.className || '') + ' dt-right').trim()
+        }
+
         // apply the per-column display prefix/suffix, if any are configured.
         // this wraps whatever render the column already has (numeric has none,
         // dates/html do) and only touches the 'display' value, so ordering,
         // searching and the underlying data stay untouched.
-        const rawPrefix = (typeof gcolumnPrefixes !== 'undefined' &&
-          gcolumnPrefixes[colDefn.id]) || ''
-        const rawSuffix = (typeof gcolumnSuffixes !== 'undefined' &&
-          gcolumnSuffixes[colDefn.id]) || ''
+        const rawPrefix = colPrefixes[colDefn.id] || ''
+        const rawSuffix = colSuffixes[colDefn.id] || ''
         if (rawPrefix || rawSuffix) {
           const prefix = esc(rawPrefix)
           const suffix = esc(rawSuffix)

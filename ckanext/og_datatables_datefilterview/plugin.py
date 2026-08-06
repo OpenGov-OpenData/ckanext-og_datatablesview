@@ -154,6 +154,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
                 u'sort_order': [ignore_missing],
                 u'column_prefixes': [ignore_missing, og_datatables_column_prefixes],
                 u'column_suffixes': [ignore_missing, og_datatables_column_suffixes],
+                u'column_thousands': [ignore_missing, og_datatables_column_thousands],
+                u'column_alignments': [ignore_missing, og_datatables_column_alignments],
                 u'filterable': [default(True), boolean_validator],
             }
         }
@@ -165,6 +167,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
             'configurabledefaults_validator': configurabledefaults_validator,
             'og_datatables_column_prefixes': og_datatables_column_prefixes,
             'og_datatables_column_suffixes': og_datatables_column_suffixes,
+            'og_datatables_column_thousands': og_datatables_column_thousands,
+            'og_datatables_column_alignments': og_datatables_column_alignments,
         }
 
     # ITemplateHelpers
@@ -175,6 +179,8 @@ class OG_DataTablesDateFilterView(p.SingletonPlugin):
             'og_datastore_dictionary': helpers.og_datastore_dictionary,
             'og_datatablesview_column_prefixes': helpers.og_datatablesview_column_prefixes,
             'og_datatablesview_column_suffixes': helpers.og_datatablesview_column_suffixes,
+            'og_datatablesview_column_thousands': helpers.og_datatablesview_column_thousands,
+            'og_datatablesview_column_alignments': helpers.og_datatablesview_column_alignments,
             'og_datatablesview_is_numeric_column': helpers.og_datatablesview_is_numeric_column,
             'og_datatablesview_has_numeric_column': helpers.og_datatablesview_has_numeric_column,
         }
@@ -200,6 +206,26 @@ def og_datatables_column_suffixes(value):
     if value is missing:
         return {}
     return helpers.og_datatablesview_column_suffixes(value)
+
+
+def og_datatables_column_thousands(value):
+    u'''
+    Validator for the per-column thousands-separator flags. Mirrors
+    :func:`og_datatables_column_prefixes`.
+    '''
+    if value is missing:
+        return {}
+    return helpers.og_datatablesview_column_thousands(value)
+
+
+def og_datatables_column_alignments(value):
+    u'''
+    Validator for the per-column right-alignment flags. Mirrors
+    :func:`og_datatables_column_prefixes`.
+    '''
+    if value is missing:
+        return {}
+    return helpers.og_datatablesview_column_alignments(value)
 
 
 def configurabledefaults_validator(default_configurable_value):
